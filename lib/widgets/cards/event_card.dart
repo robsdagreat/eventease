@@ -69,7 +69,7 @@ class EventCard extends StatelessWidget {
                                 size: 14, color: Colors.white),
                             const SizedBox(width: 4),
                             Text(
-                              event.date,
+                              '${event.date.day}/${event.date.month}/${event.date.year}',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -89,7 +89,7 @@ class EventCard extends StatelessWidget {
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withAlpha(51),
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(
@@ -102,28 +102,37 @@ class EventCard extends StatelessWidget {
                       ),
                     ),
 
-                    // Bottom info overlay
+                    // Gradient overlay
                     Positioned(
                       bottom: 0,
                       left: 0,
                       right: 0,
                       child: Container(
-                        padding: const EdgeInsets.all(16),
+                        height: 100,
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
                             colors: [
-                              Colors.black.withOpacity(0.8),
+                              Colors.black.withAlpha(204),
                               Colors.transparent,
                             ],
                           ),
                         ),
+                      ),
+                    ),
+
+                    // Content
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Event name and price
+                            // Event name and capacity
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -146,7 +155,7 @@ class EventCard extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(30),
                                   ),
                                   child: Text(
-                                    '\$${event.price}',
+                                    '${event.capacity} people',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
@@ -170,33 +179,6 @@ class EventCard extends StatelessWidget {
                                     event.location,
                                     style: const TextStyle(
                                       color: Colors.white70,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            // Get Tickets Button
-                            Container(
-                              margin: const EdgeInsets.only(top: 8),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Colors.redAccent,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.confirmation_num_outlined,
-                                      size: 14, color: Colors.white),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Get Tickets',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
                                       fontSize: 12,
                                     ),
                                   ),

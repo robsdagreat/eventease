@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'dart:developer' as developer;
 
 class AuthUser {
   final String id;
@@ -43,7 +44,7 @@ class AuthUser {
         ),
       );
     } catch (e) {
-      print('Error in AuthUser.fromMap: $e');
+      developer.log('Error in AuthUser.fromMap', error: e);
       rethrow;
     }
   }
@@ -100,14 +101,14 @@ class AuthService extends ChangeNotifier {
                   .doc(user.uid)
                   .set(basicUser.toMap());
             } catch (e) {
-              print('Error creating user in Firestore: $e');
+              developer.log('Error creating user in Firestore', error: e);
             }
           }
         } catch (e) {
-          print('Error accessing Firestore: $e');
+          developer.log('Error accessing Firestore', error: e);
         }
       } catch (e) {
-        print('Error in auth state changes: $e');
+        developer.log('Error in auth state changes', error: e);
         _currentUser = null;
         notifyListeners();
       }
@@ -119,12 +120,12 @@ class AuthService extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      // Configure reCAPTCHA settings
-      await _auth.setSettings(
-        appVerificationDisabledForTesting: true,
-        phoneNumber: null,
-        smsCode: null,
-      );
+      // Only disable reCAPTCHA in development
+      if (const bool.fromEnvironment('dart.vm.product') == false) {
+        await _auth.setSettings(
+          appVerificationDisabledForTesting: true,
+        );
+      }
 
       // Sign in with Firebase
       final userCredential = await _auth.signInWithEmailAndPassword(
@@ -178,15 +179,15 @@ class AuthService extends ChangeNotifier {
                 .doc(user.uid)
                 .set(basicUser.toMap());
           } catch (e) {
-            print('Error creating user in Firestore: $e');
+            developer.log('Error creating user in Firestore', error: e);
           }
         }
       } catch (e) {
-        print('Error accessing Firestore: $e');
+        developer.log('Error accessing Firestore', error: e);
         // Continue with basic user data if Firestore fails
       }
     } catch (e) {
-      print('Sign in error: $e');
+      developer.log('Sign in error', error: e);
       _currentUser = null;
       notifyListeners();
 
@@ -212,12 +213,12 @@ class AuthService extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      // Configure reCAPTCHA settings
-      await _auth.setSettings(
-        appVerificationDisabledForTesting: true,
-        phoneNumber: null,
-        smsCode: null,
-      );
+      // Only disable reCAPTCHA in development
+      if (const bool.fromEnvironment('dart.vm.product') == false) {
+        await _auth.setSettings(
+          appVerificationDisabledForTesting: true,
+        );
+      }
 
       // Create user in Firebase
       final userCredential = await _auth.createUserWithEmailAndPassword(
@@ -241,14 +242,14 @@ class AuthService extends ChangeNotifier {
       try {
         await _firestore.collection('users').doc(user.uid).set(newUser.toMap());
       } catch (e) {
-        print('Error creating user in Firestore: $e');
+        developer.log('Error creating user in Firestore', error: e);
         // Continue even if Firestore fails
       }
 
       _currentUser = newUser;
       notifyListeners();
     } catch (e) {
-      print('Sign up error: $e');
+      developer.log('Sign up error', error: e);
       rethrow;
     } finally {
       _isLoading = false;
@@ -262,7 +263,7 @@ class AuthService extends ChangeNotifier {
       _currentUser = null;
       notifyListeners();
     } catch (e) {
-      print('Sign out error: $e');
+      developer.log('Sign out error', error: e);
       rethrow;
     }
   }
@@ -283,7 +284,7 @@ class AuthService extends ChangeNotifier {
           'theme_mode': themeMode.toString(),
         });
       } catch (e) {
-        print('Error updating Firestore: $e');
+        developer.log('Error updating Firestore', error: e);
         // Continue even if Firestore fails
       }
 
@@ -297,7 +298,7 @@ class AuthService extends ChangeNotifier {
 
       notifyListeners();
     } catch (e) {
-      print('Update profile error: $e');
+      developer.log('Update profile error', error: e);
       rethrow;
     }
   }
@@ -322,7 +323,7 @@ class AuthService extends ChangeNotifier {
       try {
         await _firestore.collection('users').doc(_currentUser!.id).delete();
       } catch (e) {
-        print('Error deleting user from Firestore: $e');
+        developer.log('Error deleting user from Firestore', error: e);
         // Continue even if Firestore fails
       }
 
@@ -332,7 +333,7 @@ class AuthService extends ChangeNotifier {
       _currentUser = null;
       notifyListeners();
     } catch (e) {
-      print('Delete account error: $e');
+      developer.log('Delete account error', error: e);
       rethrow;
     } finally {
       _isLoading = false;

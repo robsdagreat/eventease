@@ -60,6 +60,10 @@ class _SearchPageState extends State<SearchPage> {
     });
   }
 
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
   void _filterResults() {
     // Filter events
     if (_selectedFilter == 'All' || _selectedFilter == 'Events') {
@@ -67,7 +71,7 @@ class _SearchPageState extends State<SearchPage> {
           .where((event) =>
               event.name.toLowerCase().contains(_searchQuery) ||
               event.location.toLowerCase().contains(_searchQuery) ||
-              event.date.toLowerCase().contains(_searchQuery))
+              _formatDate(event.date).toLowerCase().contains(_searchQuery))
           .toList();
     } else {
       _filteredEvents = [];
@@ -105,144 +109,116 @@ class _SearchPageState extends State<SearchPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: TextField(
-          controller: _searchController,
-          autofocus: true,
-          decoration: InputDecoration(
-            hintText: 'Search for events, venues, or specials...',
-            hintStyle: TextStyle(color: Colors.grey.shade400),
-            border: InputBorder.none,
+        title: const Text('Search'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Column(
+        children: [
+          // Search bar
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search events, venues, or specials...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade800,
+              ),
+            ),
           ),
-          style: const TextStyle(color: Colors.white),
-        ),
-        actions: [
-          if (_searchController.text.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.clear),
-              onPressed: () {
-                _searchController.clear();
-              },
-            ),
-          PopupMenuButton<String>(
-            icon: Row(
-              children: [
-                const Icon(Icons.filter_list),
-                const SizedBox(width: 4),
-                Text(_selectedFilter, style: const TextStyle(fontSize: 14)),
-              ],
-            ),
-            onSelected: (String value) {
-              setState(() {
-                _selectedFilter = value;
-                _filterResults();
-              });
-            },
-            itemBuilder: (BuildContext context) {
-              return _filterOptions.map((String option) {
-                return PopupMenuItem<String>(
-                  value: option,
-                  child: Text(option),
+
+          // Filter chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              children: _filterOptions.map((option) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: FilterChip(
+                    label: Text(option),
+                    selected: _selectedFilter == option,
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedFilter = option;
+                        _filterResults();
+                      });
+                    },
+                  ),
                 );
-              }).toList();
-            },
+              }).toList(),
+            ),
           ),
-          const SizedBox(width: 8),
+
+          // Results
+          Expanded(
+            child: !hasResults
+                ? const Center(
+                    child: Text(
+                      'No results found',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  )
+                : ListView(
+                    padding: const EdgeInsets.all(16.0),
+                    children: [
+                      // Events section
+                      if (_filteredEvents.isNotEmpty) ...[
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8.0),
+                          child: Text(
+                            'Events',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        ..._filteredEvents
+                            .map((event) => EventCard(event: event)),
+                      ],
+
+                      // Venues section
+                      if (_filteredVenues.isNotEmpty) ...[
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8.0),
+                          child: Text(
+                            'Venues',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        ..._filteredVenues
+                            .map((venue) => VenueCard(venue: venue)),
+                      ],
+
+                      // Specials section
+                      if (_filteredSpecials.isNotEmpty) ...[
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8.0),
+                          child: Text(
+                            'Specials',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        ..._filteredSpecials
+                            .map((special) => SpecialCard(special: special)),
+                      ],
+                    ],
+                  ),
+          ),
         ],
       ),
-      body: !hasResults && _searchQuery.isNotEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.search_off,
-                    size: 80,
-                    color: Colors.grey.shade600,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No results found for "$_searchQuery"',
-                    style: TextStyle(
-                      color: Colors.grey.shade400,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : _searchQuery.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.search,
-                        size: 80,
-                        color: Colors.grey.shade600,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Search for events, venues, or specials',
-                        style: TextStyle(
-                          color: Colors.grey.shade400,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : ListView(
-                  padding: const EdgeInsets.all(16.0),
-                  children: [
-                    // Events section
-                    if (_filteredEvents.isNotEmpty) ...[
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8.0),
-                        child: Text(
-                          'Events',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      ..._filteredEvents
-                          .map((event) => EventCard(event: event)),
-                    ],
-
-                    // Venues section
-                    if (_filteredVenues.isNotEmpty) ...[
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8.0),
-                        child: Text(
-                          'Venues',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      ..._filteredVenues
-                          .map((venue) => VenueCard(venue: venue)),
-                    ],
-
-                    // Specials section
-                    if (_filteredSpecials.isNotEmpty) ...[
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8.0),
-                        child: Text(
-                          'Special Offers',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      ..._filteredSpecials
-                          .map((special) => SpecialCard(special: special)),
-                    ],
-                  ],
-                ),
     );
   }
 }

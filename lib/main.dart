@@ -7,8 +7,11 @@ import 'screens/landing_page.dart';
 import 'services/auth_service.dart';
 import 'firebase_options.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const App());
 }
 
@@ -17,38 +20,11 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      ),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return MaterialApp(
-            home: Scaffold(
-              body: Center(
-                child: Text('Error initializing Firebase: ${snapshot.error}'),
-              ),
-            ),
-          );
-        }
-
-        if (snapshot.connectionState == ConnectionState.done) {
-          return MultiProvider(
-            providers: [
-              ChangeNotifierProvider(create: (_) => AuthService()),
-            ],
-            child: const MyApp(),
-          );
-        }
-
-        return const MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          ),
-        );
-      },
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthService()),
+      ],
+      child: const MyApp(),
     );
   }
 }

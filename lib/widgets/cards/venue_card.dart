@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/venue.dart';
+import 'dart:developer' as developer;
 
 class VenueCard extends StatelessWidget {
   final Venue venue;
@@ -50,20 +51,39 @@ class VenueCard extends StatelessWidget {
     return Image.network(
       venue.imageUrl,
       fit: BoxFit.cover,
-      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-        if (frame != null) {
-          return child;
-        }
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
         return Container(
           color: Colors.grey.shade800,
-          child: const Center(child: CircularProgressIndicator()),
+          child: Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                  : null,
+              color: Colors.purple,
+            ),
+          ),
         );
       },
       errorBuilder: (context, error, stackTrace) {
+        developer.log('Error loading image',
+            error: error, stackTrace: stackTrace);
         return Container(
           color: Colors.grey.shade700,
-          child: const Center(
-            child: Icon(Icons.broken_image, size: 40, color: Colors.white54),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.broken_image, size: 40, color: Colors.white54),
+              const SizedBox(height: 8),
+              Text(
+                'Failed to load image',
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 12,
+                ),
+              ),
+            ],
           ),
         );
       },
@@ -107,7 +127,7 @@ class VenueCard extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withAlpha(51), // 0.2 opacity
           shape: BoxShape.circle,
         ),
         child: IconButton(
@@ -132,7 +152,7 @@ class VenueCard extends StatelessWidget {
             begin: Alignment.bottomCenter,
             end: Alignment.topCenter,
             colors: [
-              Colors.black.withOpacity(0.8),
+              Colors.black.withAlpha(204), // 0.8 opacity
               Colors.transparent,
             ],
           ),
@@ -141,7 +161,7 @@ class VenueCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Venue name and price
+            // Venue name and capacity
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -157,7 +177,7 @@ class VenueCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '\$${venue.pricePerDay}/Night',
+                  '${venue.capacity} people',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
@@ -186,15 +206,13 @@ class VenueCard extends StatelessWidget {
               ),
             ),
 
-            // Property details
+            // Venue type and amenities
             Row(
               children: [
-                _buildPropertyDetail(Icons.bed, '${venue.beds} bed'),
+                _buildPropertyDetail(Icons.category, venue.venueType),
                 const SizedBox(width: 16),
                 _buildPropertyDetail(
-                    Icons.bathtub_outlined, '${venue.baths} bath'),
-                const SizedBox(width: 16),
-                _buildPropertyDetail(Icons.straighten, '${venue.size} m²'),
+                    Icons.people, '${venue.amenities.length} amenities'),
               ],
             ),
           ],

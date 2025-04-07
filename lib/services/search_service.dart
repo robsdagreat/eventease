@@ -16,7 +16,7 @@ class SearchService {
     results.addAll(events.where((event) =>
         event.name.toLowerCase().contains(query.toLowerCase()) ||
         event.location.toLowerCase().contains(query.toLowerCase()) ||
-        event.date.toLowerCase().contains(query.toLowerCase())));
+        _formatDate(event.date).toLowerCase().contains(query.toLowerCase())));
 
     // Search venues
     results.addAll(venues.where((venue) =>
@@ -30,6 +30,11 @@ class SearchService {
         special.discount.toLowerCase().contains(query.toLowerCase())));
 
     return results;
+  }
+
+  // Helper method to format date for search
+  static String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
   }
 
   // Get type of search result item
