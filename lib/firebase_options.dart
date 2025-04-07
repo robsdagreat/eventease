@@ -74,5 +74,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'eventease-43d23.firebasestorage.app',
     measurementId: 'G-N012P6DH70',
   );
-
 }

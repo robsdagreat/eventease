@@ -12,6 +12,8 @@ import '../widgets/promotional_section.dart';
 import '../widgets/lists/event_list.dart';
 import '../widgets/lists/venue_list.dart';
 import '../widgets/lists/special_list.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({Key? key}) : super(key: key);
@@ -31,37 +33,48 @@ class _LandingPageState extends State<LandingPage>
       id: '1',
       name: 'The Elements',
       location: 'South Jakarta',
-      pricePerDay: 1200,
       rating: 5.0,
       imageUrl: 'https://picsum.photos/id/237/400/300',
       capacity: 250,
-      beds: 2,
-      baths: 1,
-      size: 250,
+      venueType: 'Wedding',
+      description:
+          'A luxurious venue perfect for weddings and grand celebrations. Features modern architecture with elegant interiors.',
+      amenities: [
+        'Parking',
+        'WiFi',
+        'Catering Services',
+        'Sound System',
+        'Stage'
+      ],
     ),
     Venue(
       id: '2',
       name: 'Urban Loft',
       location: 'City Center',
-      pricePerDay: 950,
       rating: 4.9,
       imageUrl: 'https://picsum.photos/id/238/400/300',
-      capacity: 30,
-      beds: 1,
-      baths: 1,
-      size: 150,
+      capacity: 100,
+      venueType: 'Corporate',
+      description:
+          'Modern corporate space ideal for conferences, seminars, and business meetings.',
+      amenities: [
+        'High-speed Internet',
+        'Projector',
+        'Conference System',
+        'Coffee Service'
+      ],
     ),
     Venue(
       id: '3',
       name: 'Country Mansion',
       location: 'Countryside',
-      pricePerDay: 1500,
       rating: 4.7,
       imageUrl: 'https://picsum.photos/id/239/400/300',
-      capacity: 100,
-      beds: 4,
-      baths: 3,
-      size: 400,
+      capacity: 400,
+      venueType: 'Multi-purpose',
+      description:
+          'Spacious mansion with both indoor and outdoor spaces, perfect for any type of event.',
+      amenities: ['Garden', 'Pool', 'Kitchen', 'Parking', 'Security'],
     ),
   ];
 
@@ -142,7 +155,7 @@ class _LandingPageState extends State<LandingPage>
 
   final List<CategoryData> _categories = [
     CategoryData(
-      title: 'Upcoming Events',
+      title: 'Events',
       description:
           'Get ready for the event of your life, the get you out of shell right away',
       icon: Icons.event_available,
@@ -165,11 +178,15 @@ class _LandingPageState extends State<LandingPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: _categories.length, vsync: this);
-    _tabController.addListener(() {
+    _tabController.addListener(_handleTabSelection);
+  }
+
+  void _handleTabSelection() {
+    if (_tabController.indexIsChanging) {
       setState(() {
         _selectedCategoryIndex = _tabController.index;
       });
-    });
+    }
   }
 
   @override
@@ -192,8 +209,7 @@ class _LandingPageState extends State<LandingPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: const AppDrawer(),
-      body: _selectedIndex == 1 ? const ProfileScreen() : _buildMainContent(),
+      body: _buildMainContent(),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
@@ -211,11 +227,18 @@ class _LandingPageState extends State<LandingPage>
             label: 'Profile',
           ),
         ],
+        selectedItemColor: Colors.purpleAccent,
+        unselectedItemColor: Colors.grey,
+        backgroundColor: Colors.black,
+        type: BottomNavigationBarType.fixed,
       ),
     );
   }
 
   Widget _buildMainContent() {
+    if (_selectedIndex == 1) {
+      return const ProfileScreen();
+    }
     return SafeArea(
       child: CustomScrollView(
         slivers: [
@@ -243,6 +266,7 @@ class _LandingPageState extends State<LandingPage>
             delegate: _SliverCategoryHeaderDelegate(
               child: Container(
                 height: 56,
+                margin: const EdgeInsets.only(bottom: 16),
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 color: Theme.of(context).scaffoldBackgroundColor,
                 child: buildCategoryList(),
@@ -463,23 +487,15 @@ class _LandingPageState extends State<LandingPage>
           border: isSelected
               ? Border.all(color: Colors.purpleAccent, width: 1)
               : null,
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.purpleAccent.withOpacity(0.1),
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                  )
-                ]
-              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (category == 'Upcoming Events')
-              const Icon(Icons.event_available, size: 16),
-            if (category == 'Venues') const Icon(Icons.location_city, size: 16),
-            if (category == 'Specials') const Icon(Icons.star, size: 16),
+            Icon(
+              _categories[index].icon,
+              size: 18,
+              color: isSelected ? Colors.purpleAccent : Colors.grey,
+            ),
             const SizedBox(width: 8),
             Text(
               category,
