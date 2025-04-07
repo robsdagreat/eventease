@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/special.dart';
+import 'dart:developer' as developer;
 
 class SpecialCard extends StatelessWidget {
   final Special special;
@@ -25,27 +26,44 @@ class SpecialCard extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Image
+                    // Image with improved loading and error states
                     Image.network(
                       special.imageUrl,
                       fit: BoxFit.cover,
-                      frameBuilder:
-                          (context, child, frame, wasSynchronouslyLoaded) {
-                        if (frame != null) {
-                          return child;
-                        }
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
                         return Container(
                           color: Colors.grey.shade800,
-                          child:
-                              const Center(child: CircularProgressIndicator()),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                              color: Colors.purple,
+                            ),
+                          ),
                         );
                       },
                       errorBuilder: (context, error, stackTrace) {
+                        developer.log('Error loading image',
+                            error: error, stackTrace: stackTrace);
                         return Container(
                           color: Colors.grey.shade700,
-                          child: const Center(
-                            child: Icon(Icons.broken_image,
-                                size: 40, color: Colors.white54),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.broken_image,
+                                  size: 40, color: Colors.white54),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Failed to load image',
+                                style: TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       },

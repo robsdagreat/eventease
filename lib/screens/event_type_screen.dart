@@ -13,96 +13,201 @@ class EventTypeScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: ListView.builder(
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        itemCount: EventType.types.length,
-        itemBuilder: (context, index) {
-          final eventType = EventType.types[index];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+        children: [
+          _buildEventTypeCard(
+            context,
+            EventType(
+              id: 'wedding',
+              name: 'Wedding',
+              description: 'Find the perfect venue for your special day',
+              imageUrl: 'https://picsum.photos/id/1033/400/300',
+              icon: 'favorite',
+              minCapacity: 50,
+              maxCapacity: 500,
             ),
-            child: InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => VenueSuggestionsScreen(
-                      eventType: eventType,
+          ),
+          const SizedBox(height: 16),
+          _buildEventTypeCard(
+            context,
+            EventType(
+              id: 'corporate',
+              name: 'Corporate',
+              description:
+                  'Professional spaces for meetings, conferences, and seminars',
+              imageUrl: 'https://picsum.photos/id/1048/400/300',
+              icon: 'business',
+              minCapacity: 10,
+              maxCapacity: 1000,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildEventTypeCard(
+            context,
+            EventType(
+              id: 'birthday',
+              name: 'Birthday',
+              description: 'Celebrate your special day in style',
+              imageUrl: 'https://picsum.photos/id/1058/400/300',
+              icon: 'cake',
+              minCapacity: 10,
+              maxCapacity: 200,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildEventTypeCard(
+            context,
+            EventType(
+              id: 'concert',
+              name: 'Concert',
+              description: 'Large venues for music events and performances',
+              imageUrl: 'https://picsum.photos/id/1082/400/300',
+              icon: 'music_note',
+              minCapacity: 100,
+              maxCapacity: 5000,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildEventTypeCard(
+            context,
+            EventType(
+              id: 'exhibition',
+              name: 'Exhibition',
+              description: 'Showcase your art, products, or ideas',
+              imageUrl: 'https://picsum.photos/id/1076/400/300',
+              icon: 'museum',
+              minCapacity: 50,
+              maxCapacity: 2000,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _getIconData(String iconName) {
+    switch (iconName) {
+      case 'favorite':
+        return Icons.favorite;
+      case 'business':
+        return Icons.business;
+      case 'cake':
+        return Icons.cake;
+      case 'music_note':
+        return Icons.music_note;
+      case 'museum':
+        return Icons.museum;
+      default:
+        return Icons.event;
+    }
+  }
+
+  Widget _buildEventTypeCard(BuildContext context, EventType eventType) {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  VenueSuggestionsScreen(eventType: eventType),
+            ),
+          );
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                Image.network(
+                  eventType.imageUrl,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      height: 200,
+                      color: Colors.grey.shade800,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 200,
+                      color: Colors.grey.shade800,
+                      child: const Center(
+                        child: Icon(
+                          Icons.error_outline,
+                          color: Colors.white,
+                          size: 48,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withAlpha(204),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: Icon(
+                      _getIconData(eventType.icon),
+                      color: Colors.purple,
                     ),
                   ),
-                );
-              },
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(16),
-                    ),
-                    child: Image.network(
-                      eventType.imageUrl,
-                      height: 150,
-                      fit: BoxFit.cover,
+                  Text(
+                    eventType.name,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              eventType.icon,
-                              color: Colors.purpleAccent,
-                              size: 24,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              eventType.name,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          eventType.description,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade400,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.people_outline,
-                              size: 16,
-                              color: Colors.grey,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Capacity: ${eventType.minCapacity} - ${eventType.maxCapacity} people',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                  const SizedBox(height: 8),
+                  Text(
+                    eventType.description,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Capacity: ${eventType.minCapacity} - ${eventType.maxCapacity} people',
+                    style: const TextStyle(
+                      color: Colors.purple,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
               ),
             ),
-          );
-        },
+          ],
+        ),
       ),
     );
   }

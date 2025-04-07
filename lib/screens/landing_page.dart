@@ -14,6 +14,8 @@ import '../widgets/lists/venue_list.dart';
 import '../widgets/lists/special_list.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import 'event_type_screen.dart';
+import 'upcoming_events_screen.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({Key? key}) : super(key: key);
@@ -82,26 +84,39 @@ class _LandingPageState extends State<LandingPage>
     Event(
       id: '1',
       name: 'Summer Festival',
-      date: 'June 15, 2025',
-      location: 'Central Park',
+      description:
+          'A fun-filled summer festival with music, food, and activities',
       imageUrl: 'https://picsum.photos/id/1000/400/300',
-      price: 75,
+      location: 'Central Park',
+      date: DateTime(2025, 6, 15),
+      capacity: 1000,
+      eventTypeId: 'festival',
+      venueId: '1',
+      userId: '1',
     ),
     Event(
       id: '2',
       name: 'Tech Conference',
-      date: 'May 22, 2025',
-      location: 'Convention Center',
+      description: 'Annual technology conference featuring industry leaders',
       imageUrl: 'https://picsum.photos/id/1001/400/300',
-      price: 120,
+      location: 'Convention Center',
+      date: DateTime(2025, 5, 22),
+      capacity: 500,
+      eventTypeId: 'conference',
+      venueId: '2',
+      userId: '1',
     ),
     Event(
       id: '3',
       name: 'Food & Wine Expo',
-      date: 'July 3, 2025',
-      location: 'Riverside Gardens',
+      description: 'Experience the finest food and wine from around the world',
       imageUrl: 'https://picsum.photos/id/1002/400/300',
-      price: 60,
+      location: 'Riverside Gardens',
+      date: DateTime(2025, 7, 3),
+      capacity: 300,
+      eventTypeId: 'expo',
+      venueId: '3',
+      userId: '1',
     ),
   ];
 
@@ -223,6 +238,10 @@ class _LandingPageState extends State<LandingPage>
             label: 'Home',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.event),
+            label: 'Events',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Profile',
           ),
@@ -236,65 +255,71 @@ class _LandingPageState extends State<LandingPage>
   }
 
   Widget _buildMainContent() {
-    if (_selectedIndex == 1) {
-      return const ProfileScreen();
-    }
-    return SafeArea(
-      child: CustomScrollView(
-        slivers: [
-          const SliverToBoxAdapter(
-            child: CustomAppBar(),
-          ),
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 16),
-          ),
-          SliverToBoxAdapter(
-            child: buildFullWidthSearchBar(context),
-          ),
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 12),
-          ),
-          SliverToBoxAdapter(
-            child: PromotionalSection(
-                onGetStarted: () => _navigateToAuth(context)),
-          ),
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 12),
-          ),
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _SliverCategoryHeaderDelegate(
-              child: Container(
-                height: 56,
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                color: Theme.of(context).scaffoldBackgroundColor,
-                child: buildCategoryList(),
+    switch (_selectedIndex) {
+      case 0:
+        return SafeArea(
+          child: CustomScrollView(
+            slivers: [
+              const SliverToBoxAdapter(
+                child: CustomAppBar(),
               ),
-            ),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 16),
+              ),
+              SliverToBoxAdapter(
+                child: buildFullWidthSearchBar(context),
+              ),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 12),
+              ),
+              SliverToBoxAdapter(
+                child: PromotionalSection(
+                    onGetStarted: () => _navigateToAuth(context)),
+              ),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 12),
+              ),
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _SliverCategoryHeaderDelegate(
+                  child: Container(
+                    height: 56,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    child: buildCategoryList(),
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 16),
+              ),
+              SliverToBoxAdapter(
+                child: buildCategoryTabsSection(context),
+              ),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 16),
+              ),
+              SliverFillRemaining(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    EventList(events: _upcomingEvents),
+                    VenueList(venues: _suggestedVenues),
+                    SpecialList(specials: _specialOffers),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 16),
-          ),
-          SliverToBoxAdapter(
-            child: buildCategoryTabsSection(context),
-          ),
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 16),
-          ),
-          SliverFillRemaining(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                EventList(events: _upcomingEvents),
-                VenueList(venues: _suggestedVenues),
-                SpecialList(specials: _specialOffers),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+        );
+      case 1:
+        return const UpcomingEventsScreen();
+      case 2:
+        return const ProfileScreen();
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   Widget buildFullWidthSearchBar(BuildContext context) {
