@@ -81,15 +81,8 @@ class AuthWrapper extends StatelessWidget {
           );
         }
 
-        // If we have a current user, show the landing page
-        if (authService.currentUser != null) {
-          debugPrint("User is authenticated, showing LandingPage");
-          return const LandingPage();
-        }
-
-        // If no user or authentication failed, show the auth screen
-        debugPrint("User is not authenticated, showing AuthScreen");
-        return const AuthScreen();
+        // Always show the landing page, authentication will be checked when accessing protected features
+        return const LandingPage();
       },
     );
   }
