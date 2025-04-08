@@ -5,57 +5,79 @@ class Event {
   final String name;
   final String description;
   final String imageUrl;
-  final String location;
+  final String venueId;
   final DateTime date;
   final int capacity;
-  final String eventTypeId;
-  final String venueId;
   final String userId;
-  final bool isActive;
+  final String eventType;
+  final bool isApproved;
 
   Event({
     required this.id,
     required this.name,
     required this.description,
     required this.imageUrl,
-    required this.location,
+    required this.venueId,
     required this.date,
     required this.capacity,
-    required this.eventTypeId,
-    required this.venueId,
     required this.userId,
-    this.isActive = true,
+    required this.eventType,
+    this.isApproved = false,
   });
 
-  factory Event.fromMap(Map<String, dynamic> map) {
+  factory Event.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Event(
-      id: map['id'] ?? '',
-      name: map['name'] ?? '',
-      description: map['description'] ?? '',
-      imageUrl: map['imageUrl'] ?? '',
-      location: map['location'] ?? '',
-      date: (map['date'] as Timestamp).toDate(),
-      capacity: map['capacity'] ?? 0,
-      eventTypeId: map['eventTypeId'] ?? '',
-      venueId: map['venueId'] ?? '',
-      userId: map['userId'] ?? '',
-      isActive: map['isActive'] ?? true,
+      id: doc.id,
+      name: data['name'] ?? '',
+      description: data['description'] ?? '',
+      imageUrl: data['imageUrl'] ?? '',
+      venueId: data['venueId'] ?? '',
+      date: (data['date'] as Timestamp).toDate(),
+      capacity: data['capacity'] ?? 0,
+      userId: data['userId'] ?? '',
+      eventType: data['eventType'] ?? '',
+      isApproved: data['isApproved'] ?? false,
     );
   }
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toFirestore() {
     return {
-      'id': id,
       'name': name,
       'description': description,
       'imageUrl': imageUrl,
-      'location': location,
+      'venueId': venueId,
       'date': Timestamp.fromDate(date),
       'capacity': capacity,
-      'eventTypeId': eventTypeId,
-      'venueId': venueId,
       'userId': userId,
-      'isActive': isActive,
+      'eventType': eventType,
+      'isApproved': isApproved,
     };
+  }
+
+  Event copyWith({
+    String? id,
+    String? name,
+    String? description,
+    String? imageUrl,
+    String? venueId,
+    DateTime? date,
+    int? capacity,
+    String? userId,
+    String? eventType,
+    bool? isApproved,
+  }) {
+    return Event(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      imageUrl: imageUrl ?? this.imageUrl,
+      venueId: venueId ?? this.venueId,
+      date: date ?? this.date,
+      capacity: capacity ?? this.capacity,
+      userId: userId ?? this.userId,
+      eventType: eventType ?? this.eventType,
+      isApproved: isApproved ?? this.isApproved,
+    );
   }
 }

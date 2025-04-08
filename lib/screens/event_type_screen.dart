@@ -1,12 +1,129 @@
 import 'package:flutter/material.dart';
 import '../models/event_type.dart';
 import 'venue_suggestions_screen.dart';
+import '../services/auth_service.dart';
+import 'auth_screen.dart';
+import 'package:provider/provider.dart';
 
-class EventTypeScreen extends StatelessWidget {
+class EventTypeScreen extends StatefulWidget {
   const EventTypeScreen({Key? key}) : super(key: key);
 
   @override
+  State<EventTypeScreen> createState() => _EventTypeScreenState();
+}
+
+class _EventTypeScreenState extends State<EventTypeScreen> {
+  IconData _getIconData(String iconName) {
+    switch (iconName) {
+      case 'favorite':
+        return Icons.favorite;
+      case 'business':
+        return Icons.business;
+      case 'cake':
+        return Icons.cake;
+      case 'music_note':
+        return Icons.music_note;
+      case 'museum':
+        return Icons.museum;
+      default:
+        return Icons.event;
+    }
+  }
+
+  Widget _buildEventTypeCard(BuildContext context, EventType eventType) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => VenueSuggestionsScreen(
+                eventType: eventType,
+              ),
+            ),
+          );
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Stack(
+              alignment: Alignment.topRight,
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
+                  child: Image.network(
+                    eventType.imageUrl,
+                    height: 200,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                Container(
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    _getIconData(eventType.icon),
+                    color: Colors.purple,
+                    size: 24,
+                  ),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    eventType.name,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    eventType.description,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Capacity: ${eventType.minCapacity} - ${eventType.maxCapacity} people',
+                    style: const TextStyle(
+                      color: Colors.purple,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
+    final isLoggedIn = authService.currentUser != null;
+
+    if (!isLoggedIn) {
+      return const AuthScreen();
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Select Event Type'),
@@ -82,132 +199,6 @@ class EventTypeScreen extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  IconData _getIconData(String iconName) {
-    switch (iconName) {
-      case 'favorite':
-        return Icons.favorite;
-      case 'business':
-        return Icons.business;
-      case 'cake':
-        return Icons.cake;
-      case 'music_note':
-        return Icons.music_note;
-      case 'museum':
-        return Icons.museum;
-      default:
-        return Icons.event;
-    }
-  }
-
-  Widget _buildEventTypeCard(BuildContext context, EventType eventType) {
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  VenueSuggestionsScreen(eventType: eventType),
-            ),
-          );
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
-              children: [
-                Image.network(
-                  eventType.imageUrl,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      height: 200,
-                      color: Colors.grey.shade800,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                              : null,
-                        ),
-                      ),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      height: 200,
-                      color: Colors.grey.shade800,
-                      child: const Center(
-                        child: Icon(
-                          Icons.error_outline,
-                          color: Colors.white,
-                          size: 48,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                Positioned(
-                  top: 16,
-                  right: 16,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(204),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: Icon(
-                      _getIconData(eventType.icon),
-                      color: Colors.purple,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    eventType.name,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    eventType.description,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Capacity: ${eventType.minCapacity} - ${eventType.maxCapacity} people',
-                    style: const TextStyle(
-                      color: Colors.purple,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

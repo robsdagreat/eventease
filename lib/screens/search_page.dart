@@ -70,7 +70,8 @@ class _SearchPageState extends State<SearchPage> {
       _filteredEvents = widget.events
           .where((event) =>
               event.name.toLowerCase().contains(_searchQuery) ||
-              event.location.toLowerCase().contains(_searchQuery) ||
+              event.description.toLowerCase().contains(_searchQuery) ||
+              event.eventType.toLowerCase().contains(_searchQuery) ||
               _formatDate(event.date).toLowerCase().contains(_searchQuery))
           .toList();
     } else {

@@ -40,26 +40,24 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
         description:
             'A fun-filled summer festival with music, food, and activities',
         imageUrl: 'https://picsum.photos/id/1000/400/300',
-        location: 'Central Park',
         date: DateTime(2025, 6, 15),
         capacity: 1000,
-        eventTypeId: 'festival',
+        eventType: 'Festival',
         venueId: '1',
         userId: '1',
-        isActive: true,
+        isApproved: true,
       ),
       Event(
         id: '2',
         name: 'Tech Conference',
         description: 'Annual technology conference featuring industry leaders',
         imageUrl: 'https://picsum.photos/id/1001/400/300',
-        location: 'Convention Center',
         date: DateTime(2025, 5, 22),
         capacity: 500,
-        eventTypeId: 'conference',
+        eventType: 'Corporate',
         venueId: '2',
         userId: '1',
-        isActive: true,
+        isApproved: true,
       ),
       Event(
         id: '3',
@@ -67,13 +65,12 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
         description:
             'Experience the finest food and wine from around the world',
         imageUrl: 'https://picsum.photos/id/1002/400/300',
-        location: 'Riverside Gardens',
         date: DateTime(2025, 7, 3),
         capacity: 300,
-        eventTypeId: 'expo',
+        eventType: 'Exhibition',
         venueId: '3',
         userId: '1',
-        isActive: true,
+        isApproved: true,
       ),
     ];
   }
@@ -91,7 +88,7 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
           .get();
 
       final firebaseEvents =
-          querySnapshot.docs.map((doc) => Event.fromMap(doc.data())).toList();
+          querySnapshot.docs.map((doc) => Event.fromFirestore(doc)).toList();
 
       setState(() {
         // If no events in Firebase, use demo events
@@ -114,7 +111,7 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
     }
     return _events
         .where((event) =>
-            event.eventTypeId.toLowerCase() == _selectedFilter.toLowerCase())
+            event.eventType.toLowerCase() == _selectedFilter.toLowerCase())
         .toList();
   }
 
@@ -144,7 +141,6 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
                 )
               : Column(
                   children: [
-                    // Header section with styled container
                     Container(
                       margin: const EdgeInsets.all(16),
                       padding: const EdgeInsets.all(20),
@@ -161,14 +157,14 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
                       ),
                       child: Column(
                         children: [
-                          Row(
+                          const Row(
                             children: [
                               Icon(
                                 Icons.event,
                                 color: Colors.white,
                                 size: 28,
                               ),
-                              const SizedBox(width: 12),
+                              SizedBox(width: 12),
                               Expanded(
                                 child: Text(
                                   'Discover Amazing Events',
@@ -195,34 +191,50 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
                     // Filter chips
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       child: Row(
-                        children: _filterOptions.map((option) {
-                          final isSelected = _selectedFilter == option;
+                        children: _filterOptions.map((filter) {
+                          final isSelected = _selectedFilter == filter;
                           return Padding(
-                            padding: const EdgeInsets.only(right: 8.0),
-                            child: FilterChip(
-                              label: Text(
-                                option,
-                                style: TextStyle(
-                                  color:
-                                      isSelected ? Colors.white : Colors.purple,
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
+                            padding: const EdgeInsets.only(right: 8),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedFilter = filter;
+                                  });
+                                },
+                                borderRadius: BorderRadius.circular(20),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? const Color(0xFF2C0B3F)
+                                        : Colors.purple.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? Colors.purpleAccent
+                                          : Colors.purple.withOpacity(0.3),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    filter,
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.purple,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                      fontSize: 14,
+                                    ),
+                                  ),
                                 ),
                               ),
-                              selected: isSelected,
-                              onSelected: (selected) {
-                                setState(() {
-                                  _selectedFilter = option;
-                                });
-                              },
-                              selectedColor: Colors.purpleAccent,
-                              backgroundColor: Colors.purple.withOpacity(0.1),
-                              checkmarkColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 8),
                             ),
                           );
                         }).toList(),
@@ -309,7 +321,13 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
         },
         backgroundColor: Colors.purpleAccent,
         icon: const Icon(Icons.add),
-        label: const Text('Host Event'),
+        label: const Text(
+          'Host Event',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     );
   }
