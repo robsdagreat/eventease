@@ -132,7 +132,8 @@ class SpecialCard extends StatelessWidget {
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
                             colors: [
-                              Colors.black.withOpacity(0.8),
+                              const Color(0xFF1A1A1A).withOpacity(0.95),
+                              const Color(0xFF2C0B3F).withOpacity(0.85),
                               Colors.transparent,
                             ],
                           ),

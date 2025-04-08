@@ -16,6 +16,7 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import 'event_type_screen.dart';
 import 'upcoming_events_screen.dart';
+import 'venues_screen.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({Key? key}) : super(key: key);
@@ -78,6 +79,59 @@ class _LandingPageState extends State<LandingPage>
           'Spacious mansion with both indoor and outdoor spaces, perfect for any type of event.',
       amenities: ['Garden', 'Pool', 'Kitchen', 'Parking', 'Security'],
     ),
+    Venue(
+      id: '4',
+      name: 'Arena Stadium',
+      location: 'Entertainment District',
+      rating: 4.9,
+      imageUrl: 'https://picsum.photos/id/247/400/300',
+      capacity: 5000,
+      venueType: 'Concert',
+      description:
+          'Massive indoor arena with excellent acoustics and viewing angles.',
+      amenities: [
+        'Professional Sound System',
+        'Lighting Rig',
+        'Green Rooms',
+        'VIP Areas',
+        'Multiple Bars'
+      ],
+    ),
+    Venue(
+      id: '5',
+      name: 'Convention Center',
+      location: 'Downtown',
+      rating: 4.8,
+      imageUrl: 'https://picsum.photos/id/249/400/300',
+      capacity: 2000,
+      venueType: 'Exhibition',
+      description:
+          'Large convention center with flexible space configurations.',
+      amenities: [
+        'Exhibition Halls',
+        'Meeting Rooms',
+        'Loading Docks',
+        'Catering',
+        'WiFi'
+      ],
+    ),
+    Venue(
+      id: '6',
+      name: 'Fun Zone',
+      location: 'Entertainment Center',
+      rating: 4.6,
+      imageUrl: 'https://picsum.photos/id/251/400/300',
+      capacity: 100,
+      venueType: 'Birthday',
+      description: 'Exciting venue with games and activities for all ages.',
+      amenities: [
+        'Game Room',
+        'Party Rooms',
+        'Catering',
+        'Sound System',
+        'Party Supplies'
+      ],
+    ),
   ];
 
   final List<Event> _upcomingEvents = [
@@ -87,36 +141,36 @@ class _LandingPageState extends State<LandingPage>
       description:
           'A fun-filled summer festival with music, food, and activities',
       imageUrl: 'https://picsum.photos/id/1000/400/300',
-      location: 'Central Park',
       date: DateTime(2025, 6, 15),
       capacity: 1000,
-      eventTypeId: 'festival',
+      eventType: 'Festival',
       venueId: '1',
       userId: '1',
+      isApproved: true,
     ),
     Event(
       id: '2',
       name: 'Tech Conference',
       description: 'Annual technology conference featuring industry leaders',
       imageUrl: 'https://picsum.photos/id/1001/400/300',
-      location: 'Convention Center',
       date: DateTime(2025, 5, 22),
       capacity: 500,
-      eventTypeId: 'conference',
+      eventType: 'Conference',
       venueId: '2',
       userId: '1',
+      isApproved: true,
     ),
     Event(
       id: '3',
       name: 'Food & Wine Expo',
       description: 'Experience the finest food and wine from around the world',
       imageUrl: 'https://picsum.photos/id/1002/400/300',
-      location: 'Riverside Gardens',
       date: DateTime(2025, 7, 3),
       capacity: 300,
-      eventTypeId: 'expo',
+      eventType: 'Expo',
       venueId: '3',
       userId: '1',
+      isApproved: true,
     ),
   ];
 
@@ -223,15 +277,27 @@ class _LandingPageState extends State<LandingPage>
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
+    final isLoggedIn = authService.currentUser != null;
+
     return Scaffold(
       body: _buildMainContent(),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
+          if (!isLoggedIn && index != 0) {
+            // If not logged in and trying to access protected features, redirect to auth
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AuthScreen()),
+            );
+            return;
+          }
           setState(() {
             _selectedIndex = index;
           });
         },
+        type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -242,84 +308,103 @@ class _LandingPageState extends State<LandingPage>
             label: 'Events',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.location_city),
+            label: 'Venues',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Profile',
           ),
         ],
-        selectedItemColor: Colors.purpleAccent,
-        unselectedItemColor: Colors.grey,
-        backgroundColor: Colors.black,
-        type: BottomNavigationBarType.fixed,
       ),
     );
   }
 
   Widget _buildMainContent() {
+    final authService = Provider.of<AuthService>(context);
+    final isLoggedIn = authService.currentUser != null;
+
+    // If not logged in, only show the home content
+    if (!isLoggedIn && _selectedIndex != 0) {
+      return const Center(
+        child: Text(
+          'Please log in to access this feature',
+          style: TextStyle(fontSize: 18),
+        ),
+      );
+    }
+
     switch (_selectedIndex) {
       case 0:
-        return SafeArea(
-          child: CustomScrollView(
-            slivers: [
-              const SliverToBoxAdapter(
-                child: CustomAppBar(),
-              ),
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 16),
-              ),
-              SliverToBoxAdapter(
-                child: buildFullWidthSearchBar(context),
-              ),
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 12),
-              ),
-              SliverToBoxAdapter(
-                child: PromotionalSection(
-                    onGetStarted: () => _navigateToAuth(context)),
-              ),
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 12),
-              ),
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _SliverCategoryHeaderDelegate(
-                  child: Container(
-                    height: 56,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    child: buildCategoryList(),
-                  ),
-                ),
-              ),
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 16),
-              ),
-              SliverToBoxAdapter(
-                child: buildCategoryTabsSection(context),
-              ),
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 16),
-              ),
-              SliverFillRemaining(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    EventList(events: _upcomingEvents),
-                    VenueList(venues: _suggestedVenues),
-                    SpecialList(specials: _specialOffers),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
+        return _buildHomeContent();
       case 1:
         return const UpcomingEventsScreen();
       case 2:
+        return const VenuesScreen();
+      case 3:
         return const ProfileScreen();
       default:
-        return const SizedBox.shrink();
+        return _buildHomeContent();
     }
+  }
+
+  Widget _buildHomeContent() {
+    return SafeArea(
+      child: CustomScrollView(
+        slivers: [
+          const SliverToBoxAdapter(
+            child: CustomAppBar(),
+          ),
+          const SliverToBoxAdapter(
+            child: SizedBox(height: 16),
+          ),
+          SliverToBoxAdapter(
+            child: buildFullWidthSearchBar(context),
+          ),
+          const SliverToBoxAdapter(
+            child: SizedBox(height: 12),
+          ),
+          SliverToBoxAdapter(
+            child: PromotionalSection(
+                onGetStarted: () => _navigateToAuth(context)),
+          ),
+          const SliverToBoxAdapter(
+            child: SizedBox(height: 12),
+          ),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _SliverCategoryHeaderDelegate(
+              child: Container(
+                height: 56,
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                color: Theme.of(context).scaffoldBackgroundColor,
+                child: buildCategoryList(),
+              ),
+            ),
+          ),
+          const SliverToBoxAdapter(
+            child: SizedBox(height: 16),
+          ),
+          SliverToBoxAdapter(
+            child: buildCategoryTabsSection(context),
+          ),
+          const SliverToBoxAdapter(
+            child: SizedBox(height: 16),
+          ),
+          SliverFillRemaining(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                EventList(events: _upcomingEvents),
+                VenueList(venues: _suggestedVenues),
+                SpecialList(specials: _specialOffers),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget buildFullWidthSearchBar(BuildContext context) {
@@ -344,7 +429,7 @@ class _LandingPageState extends State<LandingPage>
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withAlpha(51),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -390,18 +475,18 @@ class _LandingPageState extends State<LandingPage>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.purple.withOpacity(0.3),
-            Colors.deepPurple.withOpacity(0.1),
+            Colors.purple.withAlpha(77),
+            Colors.deepPurple.withAlpha(26),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.purple.withOpacity(0.3),
+          color: Colors.purple.withAlpha(77),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.purple.withOpacity(0.1),
+            color: Colors.purple.withAlpha(26),
             blurRadius: 12,
             spreadRadius: 2,
           ),
@@ -440,7 +525,7 @@ class _LandingPageState extends State<LandingPage>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.purple.withOpacity(0.2),
+                  color: Colors.purple.withAlpha(51),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -455,7 +540,7 @@ class _LandingPageState extends State<LandingPage>
           Container(
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey.shade800,
+              color: Colors.black.withAlpha(26),
               borderRadius: BorderRadius.circular(2),
             ),
             child: Row(
@@ -506,7 +591,7 @@ class _LandingPageState extends State<LandingPage>
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? Colors.purpleAccent.withOpacity(0.2)
+              ? Colors.purpleAccent.withAlpha(51)
               : Colors.grey.shade800,
           borderRadius: BorderRadius.circular(30),
           border: isSelected
@@ -557,7 +642,7 @@ class _SliverCategoryHeaderDelegate extends SliverPersistentHeaderDelegate {
         color: Theme.of(context).scaffoldBackgroundColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withAlpha(26),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),

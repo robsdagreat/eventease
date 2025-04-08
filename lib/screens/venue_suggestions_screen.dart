@@ -4,6 +4,8 @@ import '../models/event_type.dart';
 import '../models/venue.dart';
 import '../widgets/cards/venue_card.dart';
 import 'event_registration_screen.dart';
+import '../services/auth_service.dart';
+import 'auth_screen.dart';
 
 class VenueSuggestionsScreen extends StatefulWidget {
   final EventType eventType;
@@ -349,6 +351,23 @@ class _VenueSuggestionsScreenState extends State<VenueSuggestionsScreen> {
   }
 
   void _onVenueSelected(Venue venue) {
+    final currentUser = AuthService().currentUser;
+    if (currentUser == null) {
+      // If not authenticated, navigate to auth screen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const AuthScreen()),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please sign in to register an event'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // If authenticated, proceed to event registration
     Navigator.push(
       context,
       MaterialPageRoute(

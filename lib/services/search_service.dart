@@ -11,23 +11,44 @@ class SearchService {
     required String query,
   }) {
     final results = <dynamic>[];
+    final queryLower = query.toLowerCase();
 
     // Search events
-    results.addAll(events.where((event) =>
-        event.name.toLowerCase().contains(query.toLowerCase()) ||
-        event.location.toLowerCase().contains(query.toLowerCase()) ||
-        _formatDate(event.date).toLowerCase().contains(query.toLowerCase())));
+    results.addAll(events.where((event) {
+      // Find the associated venue for the event
+      final venue = venues.firstWhere(
+        (v) => v.id == event.venueId,
+        orElse: () => Venue(
+          id: '',
+          name: '',
+          location: '',
+          rating: 0,
+          imageUrl: '',
+          capacity: 0,
+          venueType: '',
+          description: '',
+          amenities: [],
+        ),
+      );
+
+      return event.name.toLowerCase().contains(queryLower) ||
+          event.description.toLowerCase().contains(queryLower) ||
+          event.eventType.toLowerCase().contains(queryLower) ||
+          venue.location.toLowerCase().contains(queryLower) ||
+          _formatDate(event.date).toLowerCase().contains(queryLower);
+    }));
 
     // Search venues
     results.addAll(venues.where((venue) =>
-        venue.name.toLowerCase().contains(query.toLowerCase()) ||
-        venue.location.toLowerCase().contains(query.toLowerCase())));
+        venue.name.toLowerCase().contains(queryLower) ||
+        venue.location.toLowerCase().contains(queryLower) ||
+        venue.venueType.toLowerCase().contains(queryLower)));
 
     // Search specials
     results.addAll(specials.where((special) =>
-        special.name.toLowerCase().contains(query.toLowerCase()) ||
-        special.location.toLowerCase().contains(query.toLowerCase()) ||
-        special.discount.toLowerCase().contains(query.toLowerCase())));
+        special.name.toLowerCase().contains(queryLower) ||
+        special.location.toLowerCase().contains(queryLower) ||
+        special.discount.toLowerCase().contains(queryLower)));
 
     return results;
   }
