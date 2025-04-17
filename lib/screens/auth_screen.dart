@@ -7,7 +7,7 @@ class AuthScreen extends StatefulWidget {
   const AuthScreen({Key? key}) : super(key: key);
 
   @override
-  State<AuthScreen> createState() => _AuthScreenState();
+  _AuthScreenState createState() => _AuthScreenState();
 }
 
 class _AuthScreenState extends State<AuthScreen> {
@@ -16,6 +16,7 @@ class _AuthScreenState extends State<AuthScreen> {
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
   bool _isLogin = true;
+  bool _isLoading = false;
   String? _errorMessage;
 
   @override
@@ -26,49 +27,30 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
-  Future<void> _submitForm() async {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _errorMessage = null;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-
       if (_isLogin) {
-        await authService.signIn(
-          _emailController.text.trim(),
+        await authService.signInWithEmailAndPassword(
+          _emailController.text,
           _passwordController.text,
         );
       } else {
-        await authService.signUp(
-          _emailController.text.trim(),
+        await authService.createUserWithEmailAndPassword(
+          _emailController.text,
           _passwordController.text,
-          _nameController.text.trim(),
-        );
-      }
-
-      if (!mounted) return;
-
-      if (authService.currentUser != null) {
-        debugPrint("Authentication successful, navigating to LandingPage");
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LandingPage()),
         );
       }
     } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = e
-            .toString()
-            .replaceAll('Exception: ', '')
-            .replaceAll('[firebase_auth/wrong-password]', 'Invalid password')
-            .replaceAll('[firebase_auth/user-not-found]', 'User not found')
-            .replaceAll(
-                '[firebase_auth/invalid-email]', 'Invalid email format');
-      });
-      debugPrint("Authentication error: $_errorMessage");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -237,39 +219,28 @@ class _AuthScreenState extends State<AuthScreen> {
                         ),
                       ),
                     const SizedBox(height: 24),
-                    Consumer<AuthService>(
-                      builder: (context, authService, child) {
-                        return ElevatedButton(
-                          onPressed: authService.isLoading ? null : _submitForm,
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.purple,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            elevation: 5,
+                    if (_isLoading)
+                      const CircularProgressIndicator()
+                    else
+                      ElevatedButton(
+                        onPressed: _submit,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.purple,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          child: authService.isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.purple),
-                                  ),
-                                )
-                              : Text(
-                                  _isLogin ? 'Login' : 'Sign Up',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                        );
-                      },
-                    ),
+                          elevation: 5,
+                        ),
+                        child: Text(
+                          _isLogin ? 'Login' : 'Sign Up',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     const SizedBox(height: 16),
                     TextButton(
                       onPressed: () {
