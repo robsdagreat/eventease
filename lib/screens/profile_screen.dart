@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../widgets/account_dialogs.dart';
+import 'auth_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -16,11 +17,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = false;
   bool _notificationsEnabled = true;
   ThemeMode _themeMode = ThemeMode.system;
+  late AuthService _authService;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _authService = Provider.of<AuthService>(context, listen: false);
   }
 
   @override
@@ -30,8 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadUserData() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final user = authService.currentUser;
+    final user = _authService.currentUser;
     if (user != null) {
       setState(() {
         _nameController.text = user.name;
@@ -49,8 +51,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
-      final authService = Provider.of<AuthService>(context, listen: false);
-      await authService.updateProfile(
+      await _authService.updateProfile(
         name: _nameController.text,
         notificationsEnabled: _notificationsEnabled,
         themeMode: _themeMode,
@@ -90,6 +91,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _handleLogout() async {
+    try {
+      await _authService.signOut();
+      if (!mounted) return;
+
+      // Navigate to auth screen and clear the entire stack
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const AuthScreen()),
+        (route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error signing out: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -98,12 +120,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () async {
-              final authService =
-                  Provider.of<AuthService>(context, listen: false);
-              await authService.signOut();
-              // AuthWrapper will handle navigation automatically
-            },
+            onPressed: _handleLogout,
           ),
         ],
       ),

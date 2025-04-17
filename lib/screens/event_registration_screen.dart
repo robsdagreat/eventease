@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:provider/provider.dart';
 import 'dart:io';
 import '../models/event_type.dart';
 import '../models/venue.dart';
@@ -30,23 +31,29 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _hostNameController = TextEditingController();
+  final _hostContactController = TextEditingController();
+  final _hostDescriptionController = TextEditingController();
   DateTime? _selectedDate;
   bool _isLoading = false;
   String? _errorMessage;
   File? _imageFile;
   String? _uploadedImageUrl;
   final ImagePicker _imagePicker = ImagePicker();
+  late AuthService _authService;
+  String _hostType = 'personal';
+  bool _isPublic = false;
 
   @override
   void initState() {
     super.initState();
+    _authService = Provider.of<AuthService>(context, listen: false);
     // Set venue image as default
     _uploadedImageUrl = widget.venue.imageUrl;
 
     // Check authentication state immediately
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final currentUser = AuthService().currentUser;
-      if (currentUser == null) {
+      if (_authService.currentUser == null) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (context) => const AuthScreen(),
@@ -61,6 +68,9 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
+    _hostNameController.dispose();
+    _hostContactController.dispose();
+    _hostDescriptionController.dispose();
     super.dispose();
   }
 
@@ -125,7 +135,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
   Future<void> _registerEvent() async {
     if (!_formKey.currentState!.validate() || _selectedDate == null) {
       setState(() {
-        _errorMessage = 'Please fill in all fields';
+        _errorMessage = 'Please fill in all required fields';
       });
       return;
     }
@@ -148,13 +158,25 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
       return;
     }
 
+    // Validate professional host fields if needed
+    if (_hostType == 'professional' && _isPublic) {
+      if (_hostNameController.text.isEmpty ||
+          _hostContactController.text.isEmpty ||
+          _hostDescriptionController.text.isEmpty) {
+        setState(() {
+          _errorMessage = 'Please fill in all host information fields';
+        });
+        return;
+      }
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      final currentUser = AuthService().currentUser;
+      final currentUser = _authService.currentUser;
       if (currentUser == null) {
         setState(() {
           _errorMessage = 'Please sign in to register an event';
@@ -186,28 +208,37 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
         userId: currentUser.id,
         eventType: widget.eventType.name,
         isApproved: false,
+        hostType: _hostType,
+        isPublic: _isPublic,
+        hostName: _hostType == 'professional'
+            ? _hostNameController.text.trim()
+            : null,
+        hostContact: _hostType == 'professional'
+            ? _hostContactController.text.trim()
+            : null,
+        hostDescription: _hostType == 'professional'
+            ? _hostDescriptionController.text.trim()
+            : null,
       );
 
-      // Validate all required fields are present
-      if (event.name.isEmpty ||
-          event.description.isEmpty ||
-          event.imageUrl.isEmpty ||
-          event.venueId.isEmpty ||
-          event.userId.isEmpty ||
-          event.eventType.isEmpty) {
-        throw Exception('All fields are required');
-      }
+      // --- REVERTED: Comment out Firestore call ---
+      // await FirebaseFirestore.instance
+      //     .collection('events')
+      //     .doc(event.id)
+      //     .set(event.toFirestore());
+      debugPrint('--- Skipping Firestore Save (Using Demo Mode) ---');
+      debugPrint('Event Data: ${event.toFirestore()}'); // Log for verification
+      // --- END REVERTED ---
 
-      await FirebaseFirestore.instance
-          .collection('events')
-          .doc(event.id)
-          .set(event.toFirestore());
+      // Simulate success delay (optional)
+      await Future.delayed(const Duration(milliseconds: 500));
 
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Event registered successfully!'),
+            content: Text(
+                'Event registered successfully! (Demo)'), // Indicate demo mode
             backgroundColor: Colors.green,
           ),
         );
@@ -228,6 +259,13 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
+    final isLoggedIn = authService.currentUser != null;
+
+    if (!isLoggedIn) {
+      return const AuthScreen();
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Register Event'),
@@ -235,12 +273,47 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Event Info Card
+              Card(
+                margin: const EdgeInsets.only(bottom: 16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.eventType.name,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        widget.venue.name,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          color: Colors.purple,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Capacity: ${widget.expectedCapacity} people',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               // Event Image Picker
               Center(
                 child: GestureDetector(
@@ -422,6 +495,133 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                 ),
               ),
               const SizedBox(height: 32),
+
+              // Host Type Selection
+              Card(
+                margin: const EdgeInsets.only(bottom: 16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Host Type',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: RadioListTile<String>(
+                              title: const Text('Personal'),
+                              subtitle:
+                                  const Text('Private events like weddings'),
+                              value: 'personal',
+                              groupValue: _hostType,
+                              onChanged: (value) {
+                                setState(() {
+                                  _hostType = value!;
+                                  _isPublic = false;
+                                });
+                              },
+                            ),
+                          ),
+                          Expanded(
+                            child: RadioListTile<String>(
+                              title: const Text('Professional'),
+                              subtitle:
+                                  const Text('Public events and conferences'),
+                              value: 'professional',
+                              groupValue: _hostType,
+                              onChanged: (value) {
+                                setState(() {
+                                  _hostType = value!;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_hostType == 'professional') ...[
+                        const SizedBox(height: 16),
+                        SwitchListTile(
+                          title: const Text('Public Event'),
+                          subtitle:
+                              const Text('Promote this event on our platform'),
+                          value: _isPublic,
+                          onChanged: (value) {
+                            setState(() {
+                              _isPublic = value;
+                            });
+                          },
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+
+              // Professional Host Fields
+              if (_hostType == 'professional' && _isPublic) ...[
+                TextFormField(
+                  controller: _hostNameController,
+                  decoration: InputDecoration(
+                    labelText: 'Host Organization Name',
+                    hintText: 'Enter organization name',
+                    prefixIcon: const Icon(Icons.business),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter organization name';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _hostContactController,
+                  decoration: InputDecoration(
+                    labelText: 'Contact Information',
+                    hintText: 'Email or phone number',
+                    prefixIcon: const Icon(Icons.contact_mail),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter contact information';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _hostDescriptionController,
+                  decoration: InputDecoration(
+                    labelText: 'Host Description',
+                    hintText: 'Tell us about your organization',
+                    prefixIcon: const Icon(Icons.description),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  maxLines: 3,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter host description';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // Error message
               if (_errorMessage != null)
@@ -627,9 +827,11 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                                     AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
-                          : const Text(
-                              'Register Event',
-                              style: TextStyle(
+                          : Text(
+                              _hostType == 'professional' && _isPublic
+                                  ? 'Register & Publish Event'
+                                  : 'Register Event',
+                              style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),

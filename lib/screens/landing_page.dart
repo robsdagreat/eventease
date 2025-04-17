@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
+import 'admin/admin_dashboard_screen.dart';
+import 'auth_screen.dart';
+import 'upcoming_events_screen.dart';
+import 'venues_screen.dart';
+import 'profile_screen.dart';
+import '../widgets/custom_app_bar.dart';
+import '../widgets/promotional_section.dart';
 import '../models/event.dart';
 import '../models/venue.dart';
 import '../models/special.dart';
 import '../models/category_data.dart';
 import 'search_page.dart';
-import 'auth_screen.dart';
-import 'profile_screen.dart';
-import '../widgets/custom_app_bar.dart';
 import '../widgets/app_drawer.dart';
-import '../widgets/promotional_section.dart';
 import '../widgets/lists/event_list.dart';
 import '../widgets/lists/venue_list.dart';
 import '../widgets/lists/special_list.dart';
-import 'package:provider/provider.dart';
-import '../services/auth_service.dart';
-import 'event_type_screen.dart';
-import 'upcoming_events_screen.dart';
-import 'venues_screen.dart';
+import 'package:event_ease/models/user.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({Key? key}) : super(key: key);
@@ -277,342 +278,37 @@ class _LandingPageState extends State<LandingPage>
 
   @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context);
-    final isLoggedIn = authService.currentUser != null;
-
     return Scaffold(
-      body: _buildMainContent(),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          if (!isLoggedIn && index != 0) {
-            // If not logged in and trying to access protected features, redirect to auth
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const AuthScreen()),
-            );
-            return;
-          }
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.event),
-            label: 'Events',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.location_city),
-            label: 'Venues',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
+      appBar: AppBar(
+        title: const Text('EventEase'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              Provider.of<AuthService>(context, listen: false).signOut();
+            },
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildMainContent() {
-    final authService = Provider.of<AuthService>(context);
-    final isLoggedIn = authService.currentUser != null;
-
-    // If not logged in, only show the home content
-    if (!isLoggedIn && _selectedIndex != 0) {
-      return const Center(
-        child: Text(
-          'Please log in to access this feature',
-          style: TextStyle(fontSize: 18),
-        ),
-      );
-    }
-
-    switch (_selectedIndex) {
-      case 0:
-        return _buildHomeContent();
-      case 1:
-        return const UpcomingEventsScreen();
-      case 2:
-        return const VenuesScreen();
-      case 3:
-        return const ProfileScreen();
-      default:
-        return _buildHomeContent();
-    }
-  }
-
-  Widget _buildHomeContent() {
-    return SafeArea(
-      child: CustomScrollView(
-        slivers: [
-          const SliverToBoxAdapter(
-            child: CustomAppBar(),
-          ),
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 16),
-          ),
-          SliverToBoxAdapter(
-            child: buildFullWidthSearchBar(context),
-          ),
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 12),
-          ),
-          SliverToBoxAdapter(
-            child: PromotionalSection(
-                onGetStarted: () => _navigateToAuth(context)),
-          ),
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 12),
-          ),
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _SliverCategoryHeaderDelegate(
-              child: Container(
-                height: 56,
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                color: Theme.of(context).scaffoldBackgroundColor,
-                child: buildCategoryList(),
-              ),
-            ),
-          ),
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 16),
-          ),
-          SliverToBoxAdapter(
-            child: buildCategoryTabsSection(context),
-          ),
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 16),
-          ),
-          SliverFillRemaining(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                EventList(events: _upcomingEvents),
-                VenueList(venues: _suggestedVenues),
-                SpecialList(specials: _specialOffers),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildFullWidthSearchBar(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => SearchPage(
-              events: _upcomingEvents,
-              venues: _suggestedVenues,
-              specials: _specialOffers,
-            ),
-          ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16.0),
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade800,
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(51),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.search, size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Search for events, venues, or specials...',
-                style: TextStyle(
-                  color: Colors.grey.shade400,
-                  fontSize: 14,
-                ),
-              ),
+            const Text(
+              'Welcome to EventEase!',
+              style: TextStyle(fontSize: 24),
             ),
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade700,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.tune,
-                size: 18,
-                color: Colors.grey.shade300,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget buildCategoryTabsSection(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0),
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.purple.withAlpha(77),
-            Colors.deepPurple.withAlpha(26),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.purple.withAlpha(77),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.purple.withAlpha(26),
-            blurRadius: 12,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _categories[_selectedCategoryIndex].title,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _categories[_selectedCategoryIndex].description,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade400,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.purple.withAlpha(51),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  _categories[_selectedCategoryIndex].icon,
-                  size: 28,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.black.withAlpha(26),
-              borderRadius: BorderRadius.circular(2),
-            ),
-            child: Row(
-              children: List.generate(_categories.length, (index) {
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  width: _selectedCategoryIndex == index
-                      ? MediaQuery.of(context).size.width * 0.5 - 32
-                      : (MediaQuery.of(context).size.width * 0.5) /
-                          (_categories.length * 2),
-                  decoration: BoxDecoration(
-                    color: _selectedCategoryIndex == index
-                        ? Colors.white
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(2),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AdminDashboardScreen(),
                   ),
                 );
-              }),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildCategoryList() {
-    return ListView(
-      scrollDirection: Axis.horizontal,
-      children: List.generate(
-        _categories.length,
-        (index) => buildCategoryPill(_categories[index].title, index),
-      ),
-    );
-  }
-
-  Widget buildCategoryPill(String category, int index) {
-    bool isSelected = _selectedCategoryIndex == index;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedCategoryIndex = index;
-          _tabController.animateTo(index);
-        });
-      },
-      child: Container(
-        margin: const EdgeInsets.only(right: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? Colors.purpleAccent.withAlpha(51)
-              : Colors.grey.shade800,
-          borderRadius: BorderRadius.circular(30),
-          border: isSelected
-              ? Border.all(color: Colors.purpleAccent, width: 1)
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              _categories[index].icon,
-              size: 18,
-              color: isSelected ? Colors.purpleAccent : Colors.grey,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              category,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.grey,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
+              },
+              child: const Text('Go to Admin Dashboard'),
             ),
           ],
         ),

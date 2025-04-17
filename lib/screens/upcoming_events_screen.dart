@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/event.dart';
 import '../widgets/cards/event_card.dart';
-import 'event_type_screen.dart';
+import 'event_venue_finder_screen.dart';
 
 class UpcomingEventsScreen extends StatefulWidget {
   const UpcomingEventsScreen({Key? key}) : super(key: key);
@@ -76,32 +76,43 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
   }
 
   Future<void> _fetchEvents() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    // Simulate network delay (optional)
+    // await Future.delayed(const Duration(milliseconds: 500));
+
     try {
-      // Get current date at midnight
+      // --- REVERTED: Always use demo events ---
+      final fetchedEvents = _getDemoEvents();
+      // --- END REVERTED ---
+
+      // Filter for upcoming dates (optional for demo data, but good practice)
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
-
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('events')
-          .where('date', isGreaterThanOrEqualTo: today)
-          .orderBy('date')
-          .get();
-
-      final firebaseEvents =
-          querySnapshot.docs.map((doc) => Event.fromFirestore(doc)).toList();
+      final upcomingDemoEvents =
+          fetchedEvents.where((event) => !event.date.isBefore(today)).toList();
+      // Sort demo events by date
+      upcomingDemoEvents.sort((a, b) => a.date.compareTo(b.date));
 
       setState(() {
-        // If no events in Firebase, use demo events
-        _events = firebaseEvents.isEmpty ? _getDemoEvents() : firebaseEvents;
+        _events = upcomingDemoEvents;
         _isLoading = false;
+        if (_events.isEmpty) {
+          // Optional: Add a message if even demo data results in no upcoming events
+          // _errorMessage = 'No upcoming demo events found.';
+        }
       });
     } catch (e) {
-      debugPrint('Error fetching events: $e');
-      // If there's an error, fall back to demo events
+      // Keep error handling for potential issues in demo data or filtering
       setState(() {
-        _events = _getDemoEvents();
+        _events = []; // Clear events on error
+        _errorMessage = 'Error processing demo events. Please try again.';
         _isLoading = false;
       });
+      debugPrint('Error processing demo events: $e');
     }
   }
 
@@ -248,87 +259,55 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Text(
-                                    'No events found',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                  const Icon(
+                                    Icons.event_busy,
+                                    size: 64,
+                                    color: Colors.grey,
                                   ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Be the first to host an event!',
+                                  const SizedBox(height: 16),
+                                  const Text(
+                                    'No upcoming events match your filters.',
                                     style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 14,
+                                      fontSize: 16,
+                                      color: Colors.grey,
                                     ),
+                                    textAlign: TextAlign.center,
                                   ),
                                   const SizedBox(height: 24),
                                   ElevatedButton.icon(
+                                    icon: const Icon(Icons.add),
+                                    label: const Text('Host an Event Instead?'),
                                     onPressed: () {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
                                           builder: (context) =>
-                                              const EventTypeScreen(),
+                                              const EventVenueFinderScreen(),
                                         ),
                                       );
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.purpleAccent,
                                       padding: const EdgeInsets.symmetric(
-                                        horizontal: 24,
-                                        vertical: 12,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(30),
-                                      ),
-                                    ),
-                                    icon: const Icon(Icons.add),
-                                    label: const Text(
-                                      'Host an Event',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                          horizontal: 24, vertical: 12),
+                                      textStyle: const TextStyle(fontSize: 16),
                                     ),
                                   ),
                                 ],
                               ),
                             )
                           : ListView.builder(
-                              padding: const EdgeInsets.all(16.0),
+                              padding: const EdgeInsets.only(
+                                  left: 16, right: 16, bottom: 16),
                               itemCount: _getFilteredEvents().length,
                               itemBuilder: (context, index) {
                                 final event = _getFilteredEvents()[index];
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 16.0),
-                                  child: EventCard(event: event),
-                                );
+                                return EventCard(event: event);
                               },
                             ),
                     ),
                   ],
                 ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const EventTypeScreen(),
-            ),
-          );
-        },
-        backgroundColor: Colors.purpleAccent,
-        icon: const Icon(Icons.add),
-        label: const Text(
-          'Host Event',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
     );
   }
 }
