@@ -61,8 +61,8 @@ class _VenueListScreenState extends State<VenueListScreen> {
                   itemBuilder: (context, index) {
                     final venue = _venues[index];
                     return ListTile(
-                      leading: venue.imageUrl != null
-                          ? Image.network(venue.imageUrl!)
+                      leading: venue.images.isNotEmpty
+                          ? Image.network(venue.images.first)
                           : const Icon(Icons.place),
                       title: Text(venue.name),
                       subtitle: Text(venue.location),
@@ -101,7 +101,9 @@ class _VenueListScreenState extends State<VenueListScreen> {
                               if (confirmed == true) {
                                 try {
                                   await _adminService.deleteVenue(venue.id);
-                                  _loadVenues();
+                                  if (mounted) {
+                                    _loadVenues();
+                                  }
                                 } catch (e) {
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(

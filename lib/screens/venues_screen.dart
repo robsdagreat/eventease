@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/venue.dart';
-import '../widgets/cards/venue_card.dart';
 import 'single_venue_screen.dart';
+import '../theme/app_colors.dart';
+import '../widgets/cards/venue_card.dart';
 
 class VenuesScreen extends StatefulWidget {
   const VenuesScreen({Key? key}) : super(key: key);
@@ -27,13 +28,17 @@ class _VenuesScreenState extends State<VenuesScreen> {
     Venue(
       id: '1',
       name: 'The Elements',
-      location: 'South Jakarta',
-      rating: 5.0,
-      imageUrl: 'https://picsum.photos/id/237/400/300',
-      capacity: 250,
-      venueType: 'Wedding',
       description:
           'A luxurious venue perfect for weddings and grand celebrations. Features modern architecture with elegant interiors.',
+      location: 'South Jakarta',
+      address: '123 Luxury Street',
+      city: 'Jakarta',
+      state: 'Jakarta',
+      country: 'Indonesia',
+      postalCode: '12345',
+      venueType: 'Wedding',
+      capacity: 250,
+      rating: 5.0,
       amenities: [
         'Parking',
         'WiFi',
@@ -41,46 +46,70 @@ class _VenuesScreenState extends State<VenuesScreen> {
         'Sound System',
         'Stage'
       ],
+      images: ['https://picsum.photos/id/237/400/300'],
+      isAvailable: true,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
     Venue(
       id: '2',
       name: 'Urban Loft',
-      location: 'City Center',
-      rating: 4.9,
-      imageUrl: 'https://picsum.photos/id/238/400/300',
-      capacity: 100,
-      venueType: 'Corporate',
       description:
           'Modern corporate space ideal for conferences, seminars, and business meetings.',
+      location: 'City Center',
+      address: '456 Business Ave',
+      city: 'Jakarta',
+      state: 'Jakarta',
+      country: 'Indonesia',
+      postalCode: '67890',
+      venueType: 'Corporate',
+      capacity: 100,
+      rating: 4.9,
       amenities: [
         'High-speed Internet',
         'Projector',
         'Conference System',
         'Coffee Service'
       ],
+      images: ['https://picsum.photos/id/238/400/300'],
+      isAvailable: true,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
     Venue(
       id: '3',
       name: 'Country Mansion',
-      location: 'Countryside',
-      rating: 4.7,
-      imageUrl: 'https://picsum.photos/id/239/400/300',
-      capacity: 400,
-      venueType: 'Multi-purpose',
       description:
           'Spacious mansion with both indoor and outdoor spaces, perfect for any type of event.',
+      location: 'Countryside',
+      address: '789 Country Road',
+      city: 'Bogor',
+      state: 'West Java',
+      country: 'Indonesia',
+      postalCode: '54321',
+      venueType: 'Multi-purpose',
+      capacity: 400,
+      rating: 4.7,
       amenities: ['Garden', 'Pool', 'Kitchen', 'Parking', 'Security'],
+      images: ['https://picsum.photos/id/239/400/300'],
+      isAvailable: true,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
     Venue(
       id: '4',
       name: 'Arena Stadium',
-      location: 'Entertainment District',
-      rating: 4.9,
-      imageUrl: 'https://picsum.photos/id/247/400/300',
-      capacity: 5000,
-      venueType: 'Concert',
       description:
           'Massive indoor arena with excellent acoustics and viewing angles.',
+      location: 'Entertainment District',
+      address: '101 Stadium Blvd',
+      city: 'Jakarta',
+      state: 'Jakarta',
+      country: 'Indonesia',
+      postalCode: '11223',
+      venueType: 'Concert',
+      capacity: 5000,
+      rating: 4.9,
       amenities: [
         'Professional Sound System',
         'Lighting Rig',
@@ -88,17 +117,25 @@ class _VenuesScreenState extends State<VenuesScreen> {
         'VIP Areas',
         'Multiple Bars'
       ],
+      images: ['https://picsum.photos/id/247/400/300'],
+      isAvailable: true,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
     Venue(
       id: '5',
       name: 'Convention Center',
-      location: 'Downtown',
-      rating: 4.8,
-      imageUrl: 'https://picsum.photos/id/249/400/300',
-      capacity: 2000,
-      venueType: 'Exhibition',
       description:
           'Large convention center with flexible space configurations.',
+      location: 'Downtown',
+      address: '202 Convention St',
+      city: 'Jakarta',
+      state: 'Jakarta',
+      country: 'Indonesia',
+      postalCode: '44556',
+      venueType: 'Exhibition',
+      capacity: 2000,
+      rating: 4.8,
       amenities: [
         'Exhibition Halls',
         'Meeting Rooms',
@@ -106,16 +143,24 @@ class _VenuesScreenState extends State<VenuesScreen> {
         'Catering',
         'WiFi'
       ],
+      images: ['https://picsum.photos/id/249/400/300'],
+      isAvailable: true,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
     Venue(
       id: '6',
       name: 'Fun Zone',
-      location: 'Entertainment Center',
-      rating: 4.6,
-      imageUrl: 'https://picsum.photos/id/251/400/300',
-      capacity: 100,
-      venueType: 'Birthday',
       description: 'Exciting venue with games and activities for all ages.',
+      location: 'Entertainment Center',
+      address: '303 Fun Avenue',
+      city: 'Jakarta',
+      state: 'Jakarta',
+      country: 'Indonesia',
+      postalCode: '77889',
+      venueType: 'Birthday',
+      capacity: 100,
+      rating: 4.6,
       amenities: [
         'Game Room',
         'Party Rooms',
@@ -123,6 +168,10 @@ class _VenuesScreenState extends State<VenuesScreen> {
         'Sound System',
         'Party Supplies'
       ],
+      images: ['https://picsum.photos/id/251/400/300'],
+      isAvailable: true,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
   ];
 
@@ -138,17 +187,19 @@ class _VenuesScreenState extends State<VenuesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.black,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             expandedHeight: 200.0,
             floating: true,
             pinned: true,
+            backgroundColor: AppColors.black,
             flexibleSpace: FlexibleSpaceBar(
               title: const Text(
                 'Explore Venues',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.white,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -166,7 +217,7 @@ class _VenuesScreenState extends State<VenuesScreen> {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withOpacity(0.7),
+                          AppColors.black.withOpacity(0.7),
                         ],
                       ),
                     ),
@@ -188,19 +239,44 @@ class _VenuesScreenState extends State<VenuesScreen> {
                   final isSelected = _selectedFilter == filter;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: FilterChip(
-                      selected: isSelected,
-                      label: Text(filter),
-                      onSelected: (selected) {
-                        setState(() {
-                          _selectedFilter = filter;
-                        });
-                      },
-                      selectedColor: Colors.purpleAccent.withOpacity(0.2),
-                      checkmarkColor: Colors.purpleAccent,
-                      backgroundColor: Colors.grey.shade800,
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.purpleAccent : Colors.white,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          setState(() {
+                            _selectedFilter = filter;
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? const Color(0xFF2C0B3F)
+                                : Colors.purple.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isSelected
+                                  ? Colors.purpleAccent
+                                  : Colors.purple.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              filter,
+                              style: TextStyle(
+                                color: isSelected
+                                    ? AppColors.white
+                                    : Colors.purple,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   );
@@ -210,17 +286,12 @@ class _VenuesScreenState extends State<VenuesScreen> {
           ),
           SliverPadding(
             padding: const EdgeInsets.all(16),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 0.75,
-              ),
+            sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final venue = _filteredVenues[index];
-                  return GestureDetector(
+                  return VenueCard(
+                    venue: venue,
                     onTap: () {
                       Navigator.push(
                         context,
@@ -229,120 +300,6 @@ class _VenuesScreenState extends State<VenuesScreen> {
                         ),
                       );
                     },
-                    child: Card(
-                      clipBehavior: Clip.antiAlias,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: Stack(
-                              children: [
-                                Image.network(
-                                  venue.imageUrl,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                ),
-                                Positioned(
-                                  top: 8,
-                                  right: 8,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.7),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.star,
-                                          size: 16,
-                                          color: Colors.amber,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          venue.rating.toString(),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    venue.name,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.location_on,
-                                        size: 14,
-                                        color: Colors.grey,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          venue.location,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade400,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.people,
-                                        size: 14,
-                                        color: Colors.grey,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Up to ${venue.capacity}',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey.shade400,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   );
                 },
                 childCount: _filteredVenues.length,

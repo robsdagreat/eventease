@@ -1,9 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'dart:developer' as developer;
-import 'package:flutter/foundation.dart';
 
 class AuthUser {
   final String id;
@@ -57,20 +55,18 @@ class AuthService extends ChangeNotifier {
   AuthUser? _currentUser;
   bool _isLoading = false;
   User? _user;
+  String? _errorMessage;
 
   AuthUser? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _currentUser != null;
   User? get user => _user;
+  String? get errorMessage => _errorMessage;
 
   AuthService() {
-    _auth.authStateChanges().listen((User? user) {
-      _user = user;
-      notifyListeners();
-    });
-
-    // Listen to Firebase auth state changes
+    // Single listener for auth state changes
     _auth.authStateChanges().listen((User? user) async {
+      _user = user;
       if (user == null) {
         _currentUser = null;
         notifyListeners();
@@ -110,14 +106,21 @@ class AuthService extends ChangeNotifier {
                   .set(basicUser.toMap());
             } catch (e) {
               developer.log('Error creating user in Firestore', error: e);
+              _errorMessage =
+                  'Failed to create user profile. Please try again.';
+              notifyListeners();
             }
           }
         } catch (e) {
           developer.log('Error accessing Firestore', error: e);
+          _errorMessage =
+              'Could not access user profile. Please check your connection or permissions.';
+          notifyListeners();
         }
       } catch (e) {
         developer.log('Error in auth state changes', error: e);
         _currentUser = null;
+        _errorMessage = 'Authentication error. Please try again.';
         notifyListeners();
       }
     });
@@ -131,40 +134,90 @@ class AuthService extends ChangeNotifier {
     return await _auth.currentUser?.getIdToken();
   }
 
-  Future<UserCredential> signInWithEmailAndPassword(
+  Future<UserCredential?> signInWithEmailAndPassword(
     String email,
     String password,
   ) async {
     try {
+      _isLoading = true;
+      _errorMessage = null;
+      notifyListeners();
       final result = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
       return result;
+    } on FirebaseAuthException catch (e) {
+      _errorMessage = e.message ?? 'Login failed. Please try again.';
+      notifyListeners();
+      return null;
     } catch (e) {
-      rethrow;
+      _errorMessage = 'An unexpected error occurred during login.';
+      notifyListeners();
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
-  Future<UserCredential> createUserWithEmailAndPassword(
+  Future<UserCredential?> createUserWithEmailAndPassword(
     String email,
     String password,
+    String name,
   ) async {
     try {
+      _isLoading = true;
+      _errorMessage = null;
+      notifyListeners();
       final result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      // Save user name to Firestore
+      if (result.user != null) {
+        await _firestore.collection('users').doc(result.user!.uid).set({
+          'name': name,
+          'email': email,
+          // Add other initial user data if needed
+        });
+
+        // Manually update the current user with the name
+        _currentUser = AuthUser(
+          id: result.user!.uid,
+          email: result.user!.email ?? '',
+          name: name,
+          // Copy other default values from AuthUser constructor if necessary
+        );
+        notifyListeners();
+      }
+
       return result;
+    } on FirebaseAuthException catch (e) {
+      _errorMessage = e.message ?? 'Signup failed. Please try again.';
+      notifyListeners();
+      return null;
     } catch (e) {
-      rethrow;
+      _errorMessage = 'An unexpected error occurred during signup.';
+      notifyListeners();
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
   Future<void> signOut() async {
-    await _auth.signOut();
-    _currentUser = null;
-    notifyListeners();
+    try {
+      await _auth.signOut();
+      _currentUser = null;
+      _errorMessage = null;
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'Sign out failed. Please try again.';
+      notifyListeners();
+    }
   }
 
   Future<void> updateProfile({
@@ -172,7 +225,11 @@ class AuthService extends ChangeNotifier {
     required bool notificationsEnabled,
     required ThemeMode themeMode,
   }) async {
-    if (_currentUser == null) return;
+    if (_currentUser == null) {
+      _errorMessage = 'No user is currently logged in.';
+      notifyListeners();
+      return;
+    }
 
     try {
       // Update Firestore if available
@@ -184,6 +241,8 @@ class AuthService extends ChangeNotifier {
         });
       } catch (e) {
         developer.log('Error updating Firestore', error: e);
+        _errorMessage = 'Failed to update profile. Please try again.';
+        notifyListeners();
         // Continue even if Firestore fails
       }
 
@@ -195,20 +254,26 @@ class AuthService extends ChangeNotifier {
         themeMode: themeMode,
       );
 
+      _errorMessage = null;
       notifyListeners();
     } catch (e) {
       developer.log('Update profile error', error: e);
+      _errorMessage = 'An error occurred while updating your profile.';
+      notifyListeners();
       rethrow;
     }
   }
 
   Future<void> deleteAccount(String password) async {
     if (_currentUser == null || _auth.currentUser == null) {
+      _errorMessage = 'No authenticated user found.';
+      notifyListeners();
       throw Exception('No authenticated user found');
     }
 
     try {
       _isLoading = true;
+      _errorMessage = null;
       notifyListeners();
 
       // Re-authenticate user before deleting account
@@ -223,6 +288,8 @@ class AuthService extends ChangeNotifier {
         await _firestore.collection('users').doc(_currentUser!.id).delete();
       } catch (e) {
         developer.log('Error deleting user from Firestore', error: e);
+        _errorMessage = 'Failed to delete user data from server.';
+        notifyListeners();
         // Continue even if Firestore fails
       }
 
@@ -230,9 +297,16 @@ class AuthService extends ChangeNotifier {
       await _auth.currentUser!.delete();
 
       _currentUser = null;
+      _errorMessage = null;
       notifyListeners();
+    } on FirebaseAuthException catch (e) {
+      _errorMessage = e.message ?? 'Account deletion failed. Please try again.';
+      notifyListeners();
+      rethrow;
     } catch (e) {
       developer.log('Delete account error', error: e);
+      _errorMessage = 'An error occurred while deleting your account.';
+      notifyListeners();
       rethrow;
     } finally {
       _isLoading = false;

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +8,7 @@ import '../models/venue.dart';
 import '../models/event.dart';
 import '../services/auth_service.dart';
 import '../screens/auth_screen.dart';
+import '../theme/app_colors.dart';
 
 class EventRegistrationScreen extends StatefulWidget {
   final EventType eventType;
@@ -49,7 +49,8 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
     super.initState();
     _authService = Provider.of<AuthService>(context, listen: false);
     // Set venue image as default
-    _uploadedImageUrl = widget.venue.imageUrl;
+    _uploadedImageUrl =
+        widget.venue.images.isNotEmpty ? widget.venue.images.first : null;
 
     // Check authentication state immediately
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -80,6 +81,24 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: AppColors.pink,
+              onPrimary: AppColors.white,
+              surface: AppColors.darkGrey,
+              onSurface: AppColors.white,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.pink,
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null && picked != _selectedDate) {
       setState(() {
@@ -113,8 +132,9 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
   }
 
   Future<String?> _uploadImage() async {
-    if (_imageFile == null)
+    if (_imageFile == null) {
       return _uploadedImageUrl; // Return existing URL if no new image
+    }
 
     try {
       final storageRef = FirebaseStorage.instance
@@ -187,7 +207,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
 
       // Upload image if a new one was selected
       final imageUrl = await _uploadImage();
-      if (imageUrl == null) {
+      if (imageUrl == null && _uploadedImageUrl == null) {
         throw Exception('Failed to get image URL');
       }
 
@@ -195,40 +215,37 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
-        imageUrl: imageUrl,
-        venueId: widget.venue.id,
-        date: DateTime(
+        startTime: DateTime(
           _selectedDate!.year,
           _selectedDate!.month,
           _selectedDate!.day,
           12,
           0,
         ),
-        capacity: widget.expectedCapacity,
-        userId: currentUser.id,
+        endTime: DateTime(
+          _selectedDate!.year,
+          _selectedDate!.month,
+          _selectedDate!.day,
+          15,
+          0,
+        ),
         eventType: widget.eventType.name,
-        isApproved: false,
-        hostType: _hostType,
-        isPublic: _isPublic,
-        hostName: _hostType == 'professional'
+        venueId: widget.venue.id,
+        venueName: widget.venue.name,
+        userId: currentUser.id,
+        organizerName: _hostType == 'professional'
             ? _hostNameController.text.trim()
-            : null,
-        hostContact: _hostType == 'professional'
-            ? _hostContactController.text.trim()
-            : null,
-        hostDescription: _hostType == 'professional'
-            ? _hostDescriptionController.text.trim()
-            : null,
+            : 'Private Host',
+        isPublic: _isPublic,
+        expectedAttendees: widget.expectedCapacity,
+        imageUrl: imageUrl ?? _uploadedImageUrl,
+        status: 'draft',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       );
 
-      // --- REVERTED: Comment out Firestore call ---
-      // await FirebaseFirestore.instance
-      //     .collection('events')
-      //     .doc(event.id)
-      //     .set(event.toFirestore());
       debugPrint('--- Skipping Firestore Save (Using Demo Mode) ---');
-      debugPrint('Event Data: ${event.toFirestore()}'); // Log for verification
-      // --- END REVERTED ---
+      debugPrint('Event Data: ${event.toJson()}'); // Log for verification
 
       // Simulate success delay (optional)
       await Future.delayed(const Duration(milliseconds: 500));
@@ -237,8 +254,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-                'Event registered successfully! (Demo)'), // Indicate demo mode
+            content: Text('Event registered successfully! (Demo)'),
             backgroundColor: Colors.green,
           ),
         );
@@ -267,10 +283,17 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
     }
 
     return Scaffold(
+      backgroundColor: AppColors.black,
       appBar: AppBar(
         title: const Text('Register Event'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: const IconThemeData(color: AppColors.white),
+        titleTextStyle: const TextStyle(
+          color: AppColors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -282,6 +305,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
               // Event Info Card
               Card(
                 margin: const EdgeInsets.only(bottom: 16),
+                color: AppColors.darkerPurple,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -292,6 +316,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
+                          color: AppColors.white,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -299,7 +324,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                         widget.venue.name,
                         style: const TextStyle(
                           fontSize: 18,
-                          color: Colors.purple,
+                          color: AppColors.pink,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -307,7 +332,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                         'Capacity: ${widget.expectedCapacity} people',
                         style: const TextStyle(
                           fontSize: 16,
-                          color: Colors.grey,
+                          color: AppColors.white70,
                         ),
                       ),
                     ],
@@ -322,7 +347,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                     width: double.infinity,
                     height: 200,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade800,
+                      color: AppColors.darkGrey,
                       borderRadius: BorderRadius.circular(16),
                       image: _imageFile != null
                           ? DecorationImage(
@@ -343,13 +368,13 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                               Icon(
                                 Icons.add_photo_alternate,
                                 size: 48,
-                                color: Colors.grey.shade400,
+                                color: AppColors.white70,
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 'Add Event Image',
                                 style: TextStyle(
-                                  color: Colors.grey.shade400,
+                                  color: AppColors.white70,
                                   fontSize: 16,
                                 ),
                               ),
@@ -364,13 +389,13 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withAlpha(128),
+                                    color: AppColors.black.withOpacity(0.5),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
                                     Icons.edit,
                                     size: 20,
-                                    color: Colors.grey.shade300,
+                                    color: AppColors.white70,
                                   ),
                                 ),
                               ),
@@ -384,18 +409,18 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
               // Event Type and Venue Info Card
               Container(
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      const Color(0xFF1A1A1A).withAlpha(242),
-                      const Color(0xFF2C0B3F).withAlpha(217),
+                      AppColors.darkGrey,
+                      Color(0xFF2C0B3F),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withAlpha(51),
+                      color: AppColors.black.withOpacity(0.5),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -410,12 +435,12 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withAlpha(38),
+                            color: AppColors.white.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
                             Icons.event,
-                            color: Colors.purpleAccent.shade100,
+                            color: AppColors.pink,
                             size: 28,
                           ),
                         ),
@@ -426,7 +451,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: AppColors.white,
                             ),
                           ),
                         ),
@@ -461,7 +486,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                       const Text(
                         'Venue Amenities:',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -477,13 +502,13 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(38),
+                              color: AppColors.white.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
                               amenity,
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppColors.white,
                                 fontSize: 12,
                               ),
                             ),
@@ -499,6 +524,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
               // Host Type Selection
               Card(
                 margin: const EdgeInsets.only(bottom: 16),
+                color: AppColors.darkGrey,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -509,6 +535,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          color: AppColors.white,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -516,11 +543,14 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                         children: [
                           Expanded(
                             child: RadioListTile<String>(
-                              title: const Text('Personal'),
-                              subtitle:
-                                  const Text('Private events like weddings'),
+                              title: const Text('Personal',
+                                  style: TextStyle(color: AppColors.white70)),
+                              subtitle: const Text(
+                                  'Private events like weddings',
+                                  style: TextStyle(color: AppColors.white70)),
                               value: 'personal',
                               groupValue: _hostType,
+                              activeColor: AppColors.pink,
                               onChanged: (value) {
                                 setState(() {
                                   _hostType = value!;
@@ -531,11 +561,14 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                           ),
                           Expanded(
                             child: RadioListTile<String>(
-                              title: const Text('Professional'),
-                              subtitle:
-                                  const Text('Public events and conferences'),
+                              title: const Text('Professional',
+                                  style: TextStyle(color: AppColors.white70)),
+                              subtitle: const Text(
+                                  'Public events and conferences',
+                                  style: TextStyle(color: AppColors.white70)),
                               value: 'professional',
                               groupValue: _hostType,
+                              activeColor: AppColors.pink,
                               onChanged: (value) {
                                 setState(() {
                                   _hostType = value!;
@@ -548,10 +581,13 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                       if (_hostType == 'professional') ...[
                         const SizedBox(height: 16),
                         SwitchListTile(
-                          title: const Text('Public Event'),
-                          subtitle:
-                              const Text('Promote this event on our platform'),
+                          title: const Text('Public Event',
+                              style: TextStyle(color: AppColors.white70)),
+                          subtitle: const Text(
+                              'Promote this event on our platform',
+                              style: TextStyle(color: AppColors.white70)),
                           value: _isPublic,
+                          activeColor: AppColors.pink,
                           onChanged: (value) {
                             setState(() {
                               _isPublic = value;
@@ -568,13 +604,21 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
               if (_hostType == 'professional' && _isPublic) ...[
                 TextFormField(
                   controller: _hostNameController,
+                  style: const TextStyle(color: AppColors.white),
                   decoration: InputDecoration(
                     labelText: 'Host Organization Name',
                     hintText: 'Enter organization name',
-                    prefixIcon: const Icon(Icons.business),
+                    labelStyle: const TextStyle(color: AppColors.white70),
+                    hintStyle: const TextStyle(color: AppColors.white70),
+                    prefixIcon:
+                        const Icon(Icons.business, color: AppColors.white70),
+                    contentPadding: const EdgeInsets.all(20),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
                     ),
+                    filled: true,
+                    fillColor: AppColors.darkGrey,
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -586,13 +630,21 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _hostContactController,
+                  style: const TextStyle(color: AppColors.white),
                   decoration: InputDecoration(
                     labelText: 'Contact Information',
                     hintText: 'Email or phone number',
-                    prefixIcon: const Icon(Icons.contact_mail),
+                    labelStyle: const TextStyle(color: AppColors.white70),
+                    hintStyle: const TextStyle(color: AppColors.white70),
+                    prefixIcon: const Icon(Icons.contact_mail,
+                        color: AppColors.white70),
+                    contentPadding: const EdgeInsets.all(20),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
                     ),
+                    filled: true,
+                    fillColor: AppColors.darkGrey,
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -604,13 +656,21 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _hostDescriptionController,
+                  style: const TextStyle(color: AppColors.white),
                   decoration: InputDecoration(
                     labelText: 'Host Description',
                     hintText: 'Tell us about your organization',
-                    prefixIcon: const Icon(Icons.description),
+                    labelStyle: const TextStyle(color: AppColors.white70),
+                    hintStyle: const TextStyle(color: AppColors.white70),
+                    prefixIcon:
+                        const Icon(Icons.description, color: AppColors.white70),
+                    contentPadding: const EdgeInsets.all(20),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
                     ),
+                    filled: true,
+                    fillColor: AppColors.darkGrey,
                   ),
                   maxLines: 3,
                   validator: (value) {
@@ -632,25 +692,25 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                     vertical: 16,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade900.withAlpha(51),
+                    color: AppColors.pink.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.red.shade300.withAlpha(128),
+                      color: AppColors.pink.withOpacity(0.5),
                     ),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.error_outline,
-                        color: Colors.red.shade300,
+                        color: AppColors.pink,
                         size: 24,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           _errorMessage!,
-                          style: TextStyle(
-                            color: Colors.red.shade300,
+                          style: const TextStyle(
+                            color: AppColors.pink,
                             fontSize: 15,
                           ),
                         ),
@@ -662,28 +722,34 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
               // Event Name
               TextFormField(
                 controller: _nameController,
+                style: const TextStyle(color: AppColors.white),
                 decoration: InputDecoration(
                   labelText: 'Event Name',
                   hintText: 'Enter your event name',
-                  prefixIcon: const Icon(Icons.title),
+                  labelStyle: const TextStyle(color: AppColors.white70),
+                  hintStyle: const TextStyle(color: AppColors.white70),
+                  prefixIcon: const Icon(Icons.title, color: AppColors.white70),
                   contentPadding: const EdgeInsets.all(20),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: Colors.grey.shade600,
+                      color: AppColors.white.withOpacity(0.3),
                       width: 1.5,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                      color: Colors.purpleAccent,
+                      color: AppColors.pink,
                       width: 2,
                     ),
                   ),
+                  filled: true,
+                  fillColor: AppColors.darkGrey,
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -700,28 +766,35 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
               // Event Description
               TextFormField(
                 controller: _descriptionController,
+                style: const TextStyle(color: AppColors.white),
                 decoration: InputDecoration(
                   labelText: 'Event Description',
                   hintText: 'Describe your event',
-                  prefixIcon: const Icon(Icons.description),
+                  labelStyle: const TextStyle(color: AppColors.white70),
+                  hintStyle: const TextStyle(color: AppColors.white70),
+                  prefixIcon:
+                      const Icon(Icons.description, color: AppColors.white70),
                   contentPadding: const EdgeInsets.all(20),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: Colors.grey.shade600,
+                      color: AppColors.white.withOpacity(0.3),
                       width: 1.5,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                      color: Colors.purpleAccent,
+                      color: AppColors.pink,
                       width: 2,
                     ),
                   ),
+                  filled: true,
+                  fillColor: AppColors.darkGrey,
                 ),
                 maxLines: 3,
                 validator: (value) {
@@ -744,19 +817,20 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                   decoration: BoxDecoration(
                     border: Border.all(
                       color: _selectedDate == null
-                          ? Colors.red.shade300
-                          : Colors.grey.shade600,
+                          ? AppColors.pink
+                          : AppColors.white.withOpacity(0.3),
                       width: 1.5,
                     ),
                     borderRadius: BorderRadius.circular(12),
+                    color: AppColors.darkGrey,
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.calendar_today,
                         color: _selectedDate == null
-                            ? Colors.red.shade300
-                            : Colors.purpleAccent,
+                            ? AppColors.pink
+                            : AppColors.white70,
                       ),
                       const SizedBox(width: 16),
                       Text(
@@ -766,8 +840,8 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                         style: TextStyle(
                           fontSize: 16,
                           color: _selectedDate == null
-                              ? Colors.red.shade300
-                              : Colors.white,
+                              ? AppColors.pink
+                              : AppColors.white,
                         ),
                       ),
                     ],
@@ -780,7 +854,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                   child: Text(
                     'Please select a date',
                     style: TextStyle(
-                      color: Colors.red.shade300,
+                      color: AppColors.pink,
                       fontSize: 12,
                     ),
                   ),
@@ -803,12 +877,12 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                   ),
                   child: Ink(
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
+                      gradient: const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          const Color(0xFF6750A4).withAlpha(230),
-                          const Color(0xFF7B1FA2).withAlpha(230),
+                          AppColors.pink,
+                          AppColors.pink,
                         ],
                       ),
                       borderRadius: BorderRadius.circular(12),
@@ -823,8 +897,8 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                               width: 24,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2.5,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppColors.white),
                               ),
                             )
                           : Text(
@@ -834,6 +908,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
+                                color: AppColors.white,
                               ),
                             ),
                     ),
@@ -853,14 +928,14 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
       children: [
         Icon(
           icon,
-          color: Colors.grey.shade300,
+          color: AppColors.white70,
           size: iconSize,
         ),
         const SizedBox(width: 12),
         Text(
           '$label: ',
           style: TextStyle(
-            color: Colors.grey.shade300,
+            color: AppColors.white70,
             fontSize: fontSize,
           ),
         ),
@@ -868,7 +943,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
           child: Text(
             value,
             style: TextStyle(
-              color: Colors.white,
+              color: AppColors.white,
               fontSize: fontSize,
               fontWeight: FontWeight.w500,
             ),

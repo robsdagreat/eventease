@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/event.dart';
-import '../../services/venue_service.dart';
-import '../../theme/app_colors.dart';
+// import '../../services/venue_service.dart'; // Keep this if VenueService is actually needed
+// import '../../theme/app_colors.dart'; // Keep this if AppColors is used
 import 'dart:developer' as developer;
+import '../image_placeholder.dart'; // Import the placeholder widget
 
 class EventCard extends StatelessWidget {
   final Event event;
-  final VenueService _venueService = VenueService();
+  // final VenueService _venueService = VenueService(); // Keep this if VenueService is actually needed
 
   EventCard({Key? key, required this.event}) : super(key: key);
 
@@ -30,48 +31,54 @@ class EventCard extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Image with improved loading and error states
-                    Image.network(
-                      event.imageUrl,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          color: Colors.grey.shade800,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                  : null,
-                              color: Colors.purple,
-                            ),
-                          ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        developer.log('Error loading image',
-                            error: error, stackTrace: stackTrace);
-                        return Container(
-                          color: Colors.grey.shade700,
-                          child: const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.broken_image,
-                                  size: 40, color: Colors.white54),
-                              SizedBox(height: 8),
-                              Text(
-                                'Failed to load image',
-                                style: TextStyle(
-                                  color: Colors.white54,
-                                  fontSize: 12,
+                    // Image with improved loading and error states, handles null
+                    event.imageUrl != null && event.imageUrl!.isNotEmpty
+                        ? Image.network(
+                            event.imageUrl!,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                color: Colors.grey.shade800,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes !=
+                                            null
+                                        ? loadingProgress
+                                                .cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                    color: Colors.purple,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              developer.log('Error loading image',
+                                  error: error, stackTrace: stackTrace);
+                              return Container(
+                                color: Colors.grey.shade700,
+                                child: const Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.broken_image,
+                                        size: 40, color: Colors.white54),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      'Failed to load image',
+                                      style: TextStyle(
+                                        color: Colors.white54,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          )
+                        : const ImagePlaceholder(
+                            icon: Icons
+                                .event), // Placeholder if imageUrl is null or empty
 
                     // Event type chip
                     Positioned(
@@ -103,7 +110,7 @@ class EventCard extends StatelessWidget {
                       ),
                     ),
 
-                    // Save button
+                    // Save button (assuming this is the favorite/bookmark icon)
                     Positioned(
                       top: 12,
                       right: 12,
@@ -118,8 +125,11 @@ class EventCard extends StatelessWidget {
                           padding: EdgeInsets.zero,
                           iconSize: 20,
                           icon: const Icon(Icons.bookmark_border,
-                              color: Colors.white),
-                          onPressed: () {},
+                              color: Colors
+                                  .white), // Use bookmark_border for outline
+                          onPressed: () {
+                            // TODO: Implement save/favorite functionality
+                          },
                         ),
                       ),
                     ),
@@ -136,8 +146,10 @@ class EventCard extends StatelessWidget {
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
                             colors: [
-                              const Color(0xFF1A1A1A).withOpacity(0.95),
-                              const Color(0xFF2C0B3F).withOpacity(0.85),
+                              const Color(0xFF1A1A1A)
+                                  .withOpacity(0.95), // Dark background
+                              const Color(0xFF2C0B3F)
+                                  .withOpacity(0.85), // Purple shade
                               Colors.transparent,
                             ],
                           ),
@@ -146,7 +158,7 @@ class EventCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Event name and capacity
+                            // Event name and expected attendees (based on API docs)
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -175,7 +187,7 @@ class EventCard extends StatelessWidget {
                                           size: 14, color: Colors.white70),
                                       const SizedBox(width: 4),
                                       Text(
-                                        '${event.capacity}',
+                                        '${event.expectedAttendees}', // Use expectedAttendees from Event model
                                         style: const TextStyle(
                                           color: Colors.white70,
                                           fontSize: 12,
@@ -187,7 +199,7 @@ class EventCard extends StatelessWidget {
                               ],
                             ),
 
-                            // Date and description
+                            // Date and venue name (based on API docs)
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(vertical: 4.0),
@@ -197,23 +209,42 @@ class EventCard extends StatelessWidget {
                                       size: 14, color: Colors.white70),
                                   const SizedBox(width: 4),
                                   Text(
-                                    DateFormat('MMM d, y').format(event.date),
+                                    DateFormat('MMM d, y').format(event
+                                        .startTime), // Use startTime from Event model
                                     style: const TextStyle(
                                       color: Colors.white70,
                                       fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16), // Add some spacing
+                                  const Icon(Icons.location_on,
+                                      size: 14, color: Colors.white70),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      event
+                                          .venueName, // Use venueName from Event model
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
 
-                            // Book Now button
+                            // View Details button (using TextButton as in provided code)
                             Align(
                               alignment: Alignment.centerRight,
                               child: TextButton(
-                                onPressed: () {},
+                                onPressed: () {
+                                  // TODO: Implement navigation to event details screen
+                                },
                                 style: TextButton.styleFrom(
-                                  backgroundColor: Colors.purple,
+                                  backgroundColor:
+                                      Colors.purple, // Purple button color
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(20),
                                   ),

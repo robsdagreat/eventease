@@ -1,18 +1,18 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:eventease/models/venue.dart';
-import 'package:eventease/models/event.dart';
-import 'package:eventease/models/special.dart';
-import 'package:eventease/models/user.dart';
-import 'package:eventease/services/auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as auth;
+import 'package:logging/logging.dart';
+import '../models/venue.dart';
+import '../models/event.dart';
+import '../models/special.dart';
+import '../models/user.dart';
 
 class AdminService {
   static const String baseUrl = 'http://localhost:8000/api';
-  final AuthService _authService = AuthService();
+  final _logger = Logger('AdminService');
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final auth.FirebaseAuth _auth = auth.FirebaseAuth.instance;
 
   // Check if user is admin
   Future<bool> isAdmin(String userId) async {
@@ -27,7 +27,7 @@ class AdminService {
       }
       return false;
     } catch (e) {
-      print('Error checking admin status: $e');
+      _logger.severe('Error checking admin status: $e');
       return false;
     }
   }
@@ -49,7 +49,7 @@ class AdminService {
         'totalSpecials': 0,
       };
     } catch (e) {
-      print('Error fetching dashboard stats: $e');
+      _logger.severe('Error fetching dashboard stats: $e');
       return {
         'totalVenues': 0,
         'totalEvents': 0,
@@ -72,7 +72,7 @@ class AdminService {
       }
       return [];
     } catch (e) {
-      print('Error fetching venues: $e');
+      _logger.severe('Error fetching venues: $e');
       return [];
     }
   }
@@ -124,7 +124,7 @@ class AdminService {
       }
       return [];
     } catch (e) {
-      print('Error fetching events: $e');
+      _logger.severe('Error fetching events: $e');
       return [];
     }
   }
@@ -164,7 +164,7 @@ class AdminService {
       }
       return [];
     } catch (e) {
-      print('Error fetching specials: $e');
+      _logger.severe('Error fetching specials: $e');
       return [];
     }
   }
@@ -216,7 +216,7 @@ class AdminService {
       }
       return [];
     } catch (e) {
-      print('Error fetching users: $e');
+      _logger.severe('Error fetching users: $e');
       return [];
     }
   }

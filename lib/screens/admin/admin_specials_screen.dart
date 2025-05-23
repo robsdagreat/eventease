@@ -79,7 +79,9 @@ class _AdminSpecialsScreenState extends State<AdminSpecialsScreen> {
                   itemBuilder: (context, index) {
                     final special = _specials[index];
                     return ListTile(
-                      leading: Image.network(special.imageUrl),
+                      leading: special.imageUrl != null
+                          ? Image.network(special.imageUrl!)
+                          : const Icon(Icons.local_offer),
                       title: Text(special.title),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

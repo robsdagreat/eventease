@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/special.dart';
 import 'dart:developer' as developer;
+import '../image_placeholder.dart';
+import '../../theme/app_colors.dart';
 
 class SpecialCard extends StatelessWidget {
   final Special special;
@@ -26,50 +28,51 @@ class SpecialCard extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Image with improved loading and error states
-                    Image.network(
-                      special.imageUrl,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          color: Colors.grey.shade800,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                  : null,
-                              color: Colors.purple,
-                            ),
-                          ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        developer.log('Error loading image',
-                            error: error, stackTrace: stackTrace);
-                        return Container(
-                          color: Colors.grey.shade700,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.broken_image,
-                                  size: 40, color: Colors.white54),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Failed to load image',
-                                style: TextStyle(
-                                  color: Colors.white54,
-                                  fontSize: 12,
+                    special.imageUrl != null && special.imageUrl!.isNotEmpty
+                        ? Image.network(
+                            special.imageUrl!,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                color: AppColors.darkGrey,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes !=
+                                            null
+                                        ? loadingProgress
+                                                .cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                    color: AppColors.pink,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-
-                    // Discount chip
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              developer.log('Error loading image',
+                                  error: error, stackTrace: stackTrace);
+                              return Container(
+                                color: AppColors.darkGrey,
+                                child: const Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.broken_image,
+                                        size: 40, color: AppColors.white70),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      'Failed to load image',
+                                      style: TextStyle(
+                                        color: AppColors.white70,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          )
+                        : const ImagePlaceholder(icon: Icons.star),
                     Positioned(
                       top: 12,
                       left: 12,
@@ -77,19 +80,19 @@ class SpecialCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.purple,
+                          color: AppColors.darkerPurple,
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(Icons.local_offer,
-                                size: 14, color: Colors.white),
+                                size: 14, color: AppColors.white),
                             const SizedBox(width: 4),
                             Text(
-                              special.discount,
+                              '${special.discountPercentage?.toStringAsFixed(0)}% OFF',
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppColors.white,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
                               ),
@@ -98,8 +101,6 @@ class SpecialCard extends StatelessWidget {
                         ),
                       ),
                     ),
-
-                    // Save button
                     Positioned(
                       top: 12,
                       right: 12,
@@ -107,33 +108,32 @@ class SpecialCard extends StatelessWidget {
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: AppColors.white.withOpacity(0.2),
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(
                           padding: EdgeInsets.zero,
                           iconSize: 20,
                           icon: const Icon(Icons.bookmark_border,
-                              color: Colors.white),
-                          onPressed: () {},
+                              color: AppColors.white),
+                          onPressed: () {
+                            // TODO: Implement save/favorite functionality
+                          },
                         ),
                       ),
                     ),
-
-                    // Bottom info overlay
                     Positioned(
                       bottom: 0,
                       left: 0,
                       right: 0,
                       child: Container(
                         padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
                             colors: [
-                              const Color(0xFF1A1A1A).withOpacity(0.95),
-                              const Color(0xFF2C0B3F).withOpacity(0.85),
+                              AppColors.darkGrey,
                               Colors.transparent,
                             ],
                           ),
@@ -142,17 +142,16 @@ class SpecialCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Special name and price
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Expanded(
                                   child: Text(
-                                    special.name,
+                                    special.title,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 18,
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -161,56 +160,52 @@ class SpecialCard extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      '\$${special.originalPrice.toStringAsFixed(0)}',
+                                      '\$${special.terms?['original_price']?.toStringAsFixed(0) ?? '0'}',
                                       style: TextStyle(
                                         decoration: TextDecoration.lineThrough,
-                                        color: Colors.grey.shade400,
+                                        color: AppColors.grey,
                                         fontSize: 12,
                                       ),
                                     ),
                                     Text(
-                                      '\$${special.discountedPrice.toStringAsFixed(0)}',
+                                      '\$${special.terms?['discounted_price']?.toStringAsFixed(0) ?? '0'}',
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 16,
-                                        color: Colors.white,
+                                        color: AppColors.white,
                                       ),
                                     ),
                                   ],
                                 ),
                               ],
                             ),
-
-                            // Location
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(vertical: 4.0),
                               child: Row(
                                 children: [
                                   const Icon(Icons.location_on,
-                                      size: 14, color: Colors.white70),
+                                      size: 14, color: AppColors.white70),
                                   const SizedBox(width: 4),
                                   Text(
-                                    special.location,
+                                    special.venueName,
                                     style: const TextStyle(
-                                      color: Colors.white70,
+                                      color: AppColors.white70,
                                       fontSize: 12,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-
-                            // Book Now Button
                             Container(
                               margin: const EdgeInsets.only(top: 8),
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
+                                gradient: const LinearGradient(
                                   colors: [
-                                    Colors.purple,
-                                    Colors.purpleAccent,
+                                    AppColors.pink,
+                                    AppColors.pink,
                                   ],
                                 ),
                                 borderRadius: BorderRadius.circular(20),
@@ -219,12 +214,12 @@ class SpecialCard extends StatelessWidget {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(Icons.calendar_today_outlined,
-                                      size: 14, color: Colors.white),
+                                      size: 14, color: AppColors.white),
                                   SizedBox(width: 4),
                                   Text(
                                     'Book Now',
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 12,
                                     ),

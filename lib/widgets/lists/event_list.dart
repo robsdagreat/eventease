@@ -15,8 +15,8 @@ class EventList extends StatelessWidget {
       itemCount: events.length,
       itemBuilder: (context, index) {
         return AnimatedSlideCard(
-          child: EventCard(event: events[index]),
           index: index,
+          child: EventCard(event: events[index]),
         );
       },
     );

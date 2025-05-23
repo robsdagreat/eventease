@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/venue.dart';
 import 'dart:developer' as developer;
+import '../image_placeholder.dart';
+import '../../theme/app_colors.dart';
 
 class VenueCard extends StatelessWidget {
   final Venue venue;
@@ -34,51 +36,54 @@ class VenueCard extends StatelessWidget {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      // Image with improved loading and error states
-                      Image.network(
-                        venue.imageUrl,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            color: Colors.grey.shade800,
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes !=
-                                        null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                    : null,
-                                color: Colors.purple,
-                              ),
-                            ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          developer.log('Error loading image',
-                              error: error, stackTrace: stackTrace);
-                          return Container(
-                            color: Colors.grey.shade700,
-                            child: const Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.broken_image,
-                                    size: 40, color: Colors.white54),
-                                SizedBox(height: 8),
-                                Text(
-                                  'Failed to load image',
-                                  style: TextStyle(
-                                    color: Colors.white54,
-                                    fontSize: 12,
+                      venue.images.isNotEmpty && venue.images[0].isNotEmpty
+                          ? Image.network(
+                              venue.images[0],
+                              fit: BoxFit.cover,
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Container(
+                                  color: AppColors.darkGrey,
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      value:
+                                          loadingProgress.expectedTotalBytes !=
+                                                  null
+                                              ? loadingProgress
+                                                      .cumulativeBytesLoaded /
+                                                  loadingProgress
+                                                      .expectedTotalBytes!
+                                              : null,
+                                      color: AppColors.pink,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-
-                      // Venue type chip
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                developer.log('Error loading image',
+                                    error: error, stackTrace: stackTrace);
+                                return Container(
+                                  color: AppColors.darkGrey,
+                                  child: const Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.broken_image,
+                                          size: 40, color: AppColors.white70),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        'Failed to load image',
+                                        style: TextStyle(
+                                          color: AppColors.white70,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            )
+                          : const ImagePlaceholder(icon: Icons.location_city),
                       Positioned(
                         top: 12,
                         left: 12,
@@ -86,19 +91,19 @@ class VenueCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.purple,
+                            color: AppColors.darkerPurple,
                             borderRadius: BorderRadius.circular(30),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               const Icon(Icons.location_on,
-                                  size: 14, color: Colors.white),
+                                  size: 14, color: AppColors.white),
                               const SizedBox(width: 4),
                               Text(
                                 venue.venueType,
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
                                 ),
@@ -107,8 +112,6 @@ class VenueCard extends StatelessWidget {
                           ),
                         ),
                       ),
-
-                      // Save button
                       Positioned(
                         top: 12,
                         right: 12,
@@ -116,33 +119,32 @@ class VenueCard extends StatelessWidget {
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: AppColors.white.withOpacity(0.2),
                             shape: BoxShape.circle,
                           ),
                           child: IconButton(
                             padding: EdgeInsets.zero,
                             iconSize: 20,
                             icon: const Icon(Icons.bookmark_border,
-                                color: Colors.white),
-                            onPressed: () {},
+                                color: AppColors.white),
+                            onPressed: () {
+                              // TODO: Implement save/favorite functionality
+                            },
                           ),
                         ),
                       ),
-
-                      // Bottom info overlay
                       Positioned(
                         bottom: 0,
                         left: 0,
                         right: 0,
                         child: Container(
                           padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             gradient: LinearGradient(
                               begin: Alignment.bottomCenter,
                               end: Alignment.topCenter,
                               colors: [
-                                const Color(0xFF1A1A1A).withOpacity(0.95),
-                                const Color(0xFF2C0B3F).withOpacity(0.85),
+                                AppColors.darkGrey,
                                 Colors.transparent,
                               ],
                             ),
@@ -151,7 +153,6 @@ class VenueCard extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Venue name and capacity
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
@@ -162,7 +163,7 @@ class VenueCard extends StatelessWidget {
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 18,
-                                        color: Colors.white,
+                                        color: AppColors.white,
                                       ),
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -171,19 +172,20 @@ class VenueCard extends StatelessWidget {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: Colors.purple.withOpacity(0.3),
+                                      color: AppColors.darkerPurple
+                                          .withOpacity(0.3),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         const Icon(Icons.people,
-                                            size: 14, color: Colors.white70),
+                                            size: 14, color: AppColors.white70),
                                         const SizedBox(width: 4),
                                         Text(
                                           '${venue.capacity}',
                                           style: const TextStyle(
-                                            color: Colors.white70,
+                                            color: AppColors.white70,
                                             fontSize: 12,
                                           ),
                                         ),
@@ -192,21 +194,19 @@ class VenueCard extends StatelessWidget {
                                   ),
                                 ],
                               ),
-
-                              // Location
                               Padding(
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 4.0),
                                 child: Row(
                                   children: [
                                     const Icon(Icons.location_on,
-                                        size: 14, color: Colors.white70),
+                                        size: 14, color: AppColors.white70),
                                     const SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
                                         venue.location,
                                         style: const TextStyle(
-                                          color: Colors.white70,
+                                          color: AppColors.white70,
                                           fontSize: 12,
                                         ),
                                         maxLines: 1,
@@ -216,14 +216,12 @@ class VenueCard extends StatelessWidget {
                                   ],
                                 ),
                               ),
-
-                              // Book Now button
                               Align(
                                 alignment: Alignment.centerRight,
                                 child: TextButton(
                                   onPressed: onTap,
                                   style: TextButton.styleFrom(
-                                    backgroundColor: Colors.purple,
+                                    backgroundColor: AppColors.pink,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(20),
                                     ),
@@ -233,7 +231,7 @@ class VenueCard extends StatelessWidget {
                                   child: const Text(
                                     'View Details',
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 12,
                                     ),

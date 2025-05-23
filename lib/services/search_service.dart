@@ -22,12 +22,20 @@ class SearchService {
           id: '',
           name: '',
           location: '',
+          address: '',
+          city: '',
+          state: '',
+          country: '',
+          postalCode: '',
           rating: 0,
-          imageUrl: '',
+          images: [],
           capacity: 0,
           venueType: '',
           description: '',
           amenities: [],
+          isAvailable: true,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
         ),
       );
 
@@ -35,7 +43,7 @@ class SearchService {
           event.description.toLowerCase().contains(queryLower) ||
           event.eventType.toLowerCase().contains(queryLower) ||
           venue.location.toLowerCase().contains(queryLower) ||
-          _formatDate(event.date).toLowerCase().contains(queryLower);
+          _formatDate(event.startTime).toLowerCase().contains(queryLower);
     }));
 
     // Search venues
@@ -46,9 +54,9 @@ class SearchService {
 
     // Search specials
     results.addAll(specials.where((special) =>
-        special.name.toLowerCase().contains(queryLower) ||
-        special.location.toLowerCase().contains(queryLower) ||
-        special.discount.toLowerCase().contains(queryLower)));
+        special.title.toLowerCase().contains(queryLower) ||
+        special.description.toLowerCase().contains(queryLower) ||
+        special.venueName.toLowerCase().contains(queryLower)));
 
     return results;
   }

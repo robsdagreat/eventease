@@ -1,16 +1,18 @@
-import 'package:flutter/material.dart';
-
 class EventType {
   final String id;
   final String name;
   final String description;
   final String? imageUrl;
+  final int minCapacity;
+  final int maxCapacity;
 
   EventType({
     required this.id,
     required this.name,
     required this.description,
     this.imageUrl,
+    this.minCapacity = 1,
+    this.maxCapacity = 1000,
   });
 
   factory EventType.fromJson(Map<String, dynamic> json) {

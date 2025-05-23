@@ -1,5 +1,3 @@
-import 'venue.dart';
-import 'user.dart';
 
 class Event {
   final String id;
@@ -9,22 +7,17 @@ class Event {
   final DateTime endTime;
   final String eventType;
   final String venueId;
+  final String venueName;
   final String userId;
-  final String hostType;
+  final String organizerName;
   final bool isPublic;
-  final int guestCount;
+  final int expectedAttendees;
   final String? imageUrl;
-  final String? status;
-  final double? budget;
-  final List<String>? requirements;
-  final Map<String, dynamic>? additionalInfo;
-  final String? contactPerson;
-  final String? contactPhone;
-  final String? contactEmail;
+  final String status; // 'draft', 'published', 'cancelled'
+  final double? ticketPrice;
   final List<String>? tags;
-  final bool isCancelled;
-  final DateTime? cancelledAt;
-  final String? cancellationReason;
+  final String? contactEmail;
+  final String? contactPhone;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -36,22 +29,17 @@ class Event {
     required this.endTime,
     required this.eventType,
     required this.venueId,
+    required this.venueName,
     required this.userId,
-    required this.hostType,
+    required this.organizerName,
     required this.isPublic,
-    required this.guestCount,
+    required this.expectedAttendees,
     this.imageUrl,
-    this.status,
-    this.budget,
-    this.requirements,
-    this.additionalInfo,
-    this.contactPerson,
-    this.contactPhone,
-    this.contactEmail,
+    required this.status,
+    this.ticketPrice,
     this.tags,
-    required this.isCancelled,
-    this.cancelledAt,
-    this.cancellationReason,
+    this.contactEmail,
+    this.contactPhone,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -65,24 +53,17 @@ class Event {
       endTime: DateTime.parse(json['end_time']),
       eventType: json['event_type'],
       venueId: json['venue_id'],
+      venueName: json['venue_name'],
       userId: json['user_id'],
-      hostType: json['host_type'],
+      organizerName: json['organizer_name'],
       isPublic: json['is_public'] ?? false,
-      guestCount: json['guest_count'] ?? 0,
+      expectedAttendees: json['expected_attendees'] ?? 0,
       imageUrl: json['image_url'],
-      status: json['status'],
-      budget: json['budget']?.toDouble(),
-      requirements: List<String>.from(json['requirements'] ?? []),
-      additionalInfo: json['additional_info'],
-      contactPerson: json['contact_person'],
-      contactPhone: json['contact_phone'],
-      contactEmail: json['contact_email'],
+      status: json['status'] ?? 'draft',
+      ticketPrice: json['ticket_price']?.toDouble(),
       tags: List<String>.from(json['tags'] ?? []),
-      isCancelled: json['is_cancelled'] ?? false,
-      cancelledAt: json['cancelled_at'] != null
-          ? DateTime.parse(json['cancelled_at'])
-          : null,
-      cancellationReason: json['cancellation_reason'],
+      contactEmail: json['contact_email'],
+      contactPhone: json['contact_phone'],
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
     );
@@ -97,22 +78,17 @@ class Event {
       'end_time': endTime.toIso8601String(),
       'event_type': eventType,
       'venue_id': venueId,
+      'venue_name': venueName,
       'user_id': userId,
-      'host_type': hostType,
+      'organizer_name': organizerName,
       'is_public': isPublic,
-      'guest_count': guestCount,
+      'expected_attendees': expectedAttendees,
       'image_url': imageUrl,
       'status': status,
-      'budget': budget,
-      'requirements': requirements,
-      'additional_info': additionalInfo,
-      'contact_person': contactPerson,
-      'contact_phone': contactPhone,
-      'contact_email': contactEmail,
+      'ticket_price': ticketPrice,
       'tags': tags,
-      'is_cancelled': isCancelled,
-      'cancelled_at': cancelledAt?.toIso8601String(),
-      'cancellation_reason': cancellationReason,
+      'contact_email': contactEmail,
+      'contact_phone': contactPhone,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -126,22 +102,17 @@ class Event {
     DateTime? endTime,
     String? eventType,
     String? venueId,
+    String? venueName,
     String? userId,
-    String? hostType,
+    String? organizerName,
     bool? isPublic,
-    int? guestCount,
+    int? expectedAttendees,
     String? imageUrl,
     String? status,
-    double? budget,
-    List<String>? requirements,
-    Map<String, dynamic>? additionalInfo,
-    String? contactPerson,
-    String? contactPhone,
-    String? contactEmail,
+    double? ticketPrice,
     List<String>? tags,
-    bool? isCancelled,
-    DateTime? cancelledAt,
-    String? cancellationReason,
+    String? contactEmail,
+    String? contactPhone,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -153,22 +124,17 @@ class Event {
       endTime: endTime ?? this.endTime,
       eventType: eventType ?? this.eventType,
       venueId: venueId ?? this.venueId,
+      venueName: venueName ?? this.venueName,
       userId: userId ?? this.userId,
-      hostType: hostType ?? this.hostType,
+      organizerName: organizerName ?? this.organizerName,
       isPublic: isPublic ?? this.isPublic,
-      guestCount: guestCount ?? this.guestCount,
+      expectedAttendees: expectedAttendees ?? this.expectedAttendees,
       imageUrl: imageUrl ?? this.imageUrl,
       status: status ?? this.status,
-      budget: budget ?? this.budget,
-      requirements: requirements ?? this.requirements,
-      additionalInfo: additionalInfo ?? this.additionalInfo,
-      contactPerson: contactPerson ?? this.contactPerson,
-      contactPhone: contactPhone ?? this.contactPhone,
-      contactEmail: contactEmail ?? this.contactEmail,
+      ticketPrice: ticketPrice ?? this.ticketPrice,
       tags: tags ?? this.tags,
-      isCancelled: isCancelled ?? this.isCancelled,
-      cancelledAt: cancelledAt ?? this.cancelledAt,
-      cancellationReason: cancellationReason ?? this.cancellationReason,
+      contactEmail: contactEmail ?? this.contactEmail,
+      contactPhone: contactPhone ?? this.contactPhone,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

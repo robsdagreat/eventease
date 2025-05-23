@@ -15,8 +15,8 @@ class SpecialList extends StatelessWidget {
       itemCount: specials.length,
       itemBuilder: (context, index) {
         return AnimatedSlideCard(
-          child: SpecialCard(special: specials[index]),
           index: index,
+          child: SpecialCard(special: specials[index]),
         );
       },
     );

@@ -10,7 +10,6 @@ class AppTheme {
         primary: Colors.white,
         secondary: Colors.red.shade400,
         surface: Colors.grey.shade900,
-        background: Colors.black,
       ),
       fontFamily: 'Poppins',
       appBarTheme: const AppBarTheme(

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color primary =
-      Color(0xFF6750A4); // Material Design 3 Primary Purple
-  static const Color secondary = Color(0xFF625B71);
-  static const Color surface = Color(0xFFFFFBFE);
-  static const Color background = Color(0xFFFFFBFE);
-  static const Color error = Color(0xFFB3261E);
+  static const Color black = Color(0xFF000000);
+  static const Color darkGrey = Color(0xFF1A1A1A);
+  static const Color darkerPurple = Color(0xFF4B1868);
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color white70 = Color(0xB3FFFFFF); // 70% opacity white
+  static const Color pink = Color(0xFFE91E63);
+  static const Color grey = Color(0xFF9E9E9E); // Standard grey for hints, etc.
+  static Color? lightGrey = Colors.grey[200]; // Light grey for input field fill
 }

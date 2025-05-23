@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:eventease/services/admin_service.dart';
-import 'package:eventease/models/venue.dart';
+import '../../services/admin_service.dart';
+import '../../models/venue.dart';
 
 class AdminVenuesScreen extends StatefulWidget {
   const AdminVenuesScreen({Key? key}) : super(key: key);
 
   @override
-  _AdminVenuesScreenState createState() => _AdminVenuesScreenState();
+  State<AdminVenuesScreen> createState() => _AdminVenuesScreenState();
 }
 
 class _AdminVenuesScreenState extends State<AdminVenuesScreen> {
@@ -21,14 +21,17 @@ class _AdminVenuesScreenState extends State<AdminVenuesScreen> {
   }
 
   Future<void> _loadVenues() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final venues = await _adminService.getVenues();
+      if (!mounted) return;
       setState(() {
         _venues = venues;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to load venues: $e')),
@@ -38,8 +41,8 @@ class _AdminVenuesScreenState extends State<AdminVenuesScreen> {
 
   Future<void> _deleteVenue(String venueId) async {
     try {
-      final success = await _adminService.deleteVenue(venueId);
-      if (success) {
+      await _adminService.deleteVenue(venueId);
+      if (mounted) {
         setState(() {
           _venues.removeWhere((venue) => venue.id == venueId);
         });
@@ -48,6 +51,7 @@ class _AdminVenuesScreenState extends State<AdminVenuesScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to delete venue: $e')),
       );
@@ -83,7 +87,7 @@ class _AdminVenuesScreenState extends State<AdminVenuesScreen> {
                     ),
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundImage: NetworkImage(venue.imageUrl),
+                        backgroundImage: NetworkImage(venue.images.first),
                       ),
                       title: Text(venue.name),
                       subtitle: Text(

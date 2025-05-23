@@ -26,8 +26,8 @@ class VenueList extends StatelessWidget {
             );
           },
           child: AnimatedSlideCard(
-            child: VenueCard(venue: venue),
             index: index,
+            child: VenueCard(venue: venue),
           ),
         );
       },

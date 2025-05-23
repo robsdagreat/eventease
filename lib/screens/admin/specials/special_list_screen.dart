@@ -61,7 +61,9 @@ class _SpecialListScreenState extends State<SpecialListScreen> {
                   itemBuilder: (context, index) {
                     final special = _specials[index];
                     return ListTile(
-                      leading: Image.network(special.imageUrl),
+                      leading: special.imageUrl != null
+                          ? Image.network(special.imageUrl!)
+                          : const Icon(Icons.local_offer),
                       title: Text(special.title),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,7 +116,9 @@ class _SpecialListScreenState extends State<SpecialListScreen> {
                               if (confirmed == true) {
                                 try {
                                   await _adminService.deleteSpecial(special.id);
-                                  _loadSpecials();
+                                  if (mounted) {
+                                    _loadSpecials();
+                                  }
                                 } catch (e) {
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(

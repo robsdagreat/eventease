@@ -1,4 +1,4 @@
-package com.example.event_ease
+package com.example.eventease
 
 import io.flutter.embedding.android.FlutterActivity
 

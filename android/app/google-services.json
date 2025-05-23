@@ -1,15 +1,16 @@
 {
   "project_info": {
     "project_number": "16182409724",
+    "firebase_url": "https://eventease-43d23-default-rtdb.firebaseio.com",
     "project_id": "eventease-43d23",
     "storage_bucket": "eventease-43d23.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:16182409724:android:6ae4e7f3a6953a7f8a1a79",
+        "mobilesdk_app_id": "1:16182409724:android:4a574fc8fdc4fd198a1a79",
         "android_client_info": {
-          "package_name": "com.example.event_ease"
+          "package_name": "com.example.eventease"
         }
       },
       "oauth_client": [],

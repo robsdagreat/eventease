@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/venue.dart';
+import '../theme/app_colors.dart';
+import '../widgets/image_placeholder.dart';
+import '../screens/venue_booking_screen.dart';
 
 class SingleVenueScreen extends StatelessWidget {
   final Venue venue;
@@ -12,19 +15,67 @@ class SingleVenueScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.black,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             expandedHeight: 300.0,
             pinned: true,
+            backgroundColor: AppColors.black,
+            iconTheme: const IconThemeData(color: AppColors.white),
             flexibleSpace: FlexibleSpaceBar(
+              title: Text(
+                venue.name,
+                style: const TextStyle(
+                  color: AppColors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.network(
-                    venue.imageUrl,
-                    fit: BoxFit.cover,
-                  ),
+                  venue.images.isNotEmpty && venue.images.first.isNotEmpty
+                      ? Image.network(
+                          venue.images.first,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              color: AppColors.darkGrey,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes !=
+                                          null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                                  color: AppColors.pink,
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: AppColors.darkGrey,
+                              child: const Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.broken_image,
+                                      size: 40, color: AppColors.white70),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Failed to load image',
+                                    style: TextStyle(
+                                      color: AppColors.white70,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        )
+                      : const ImagePlaceholder(icon: Icons.location_city),
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -32,7 +83,7 @@ class SingleVenueScreen extends StatelessWidget {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withOpacity(0.7),
+                          AppColors.black.withOpacity(0.7),
                         ],
                       ),
                     ),
@@ -59,6 +110,7 @@ class SingleVenueScreen extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
+                                color: AppColors.white,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -67,14 +119,17 @@ class SingleVenueScreen extends StatelessWidget {
                                 const Icon(
                                   Icons.location_on,
                                   size: 16,
-                                  color: Colors.grey,
+                                  color: AppColors.white70,
                                 ),
                                 const SizedBox(width: 4),
-                                Text(
-                                  venue.location,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey.shade400,
+                                Expanded(
+                                  child: Text(
+                                    venue.location,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.white70,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -88,7 +143,7 @@ class SingleVenueScreen extends StatelessWidget {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.purpleAccent.withOpacity(0.2),
+                          color: AppColors.darkerPurple.withOpacity(0.5),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
@@ -96,7 +151,7 @@ class SingleVenueScreen extends StatelessWidget {
                             const Icon(
                               Icons.star,
                               size: 20,
-                              color: Colors.amber,
+                              color: AppColors.white,
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -104,7 +159,7 @@ class SingleVenueScreen extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: AppColors.white,
                               ),
                             ),
                           ],
@@ -116,10 +171,10 @@ class SingleVenueScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade900,
+                      color: AppColors.darkGrey,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.grey.shade800,
+                        color: AppColors.white.withOpacity(0.1),
                         width: 1,
                       ),
                     ),
@@ -130,7 +185,7 @@ class SingleVenueScreen extends StatelessWidget {
                           children: [
                             Icon(
                               Icons.event_seat,
-                              color: Colors.purpleAccent.shade100,
+                              color: AppColors.pink,
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -138,6 +193,7 @@ class SingleVenueScreen extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
+                                color: AppColors.white,
                               ),
                             ),
                           ],
@@ -147,7 +203,7 @@ class SingleVenueScreen extends StatelessWidget {
                           children: [
                             Icon(
                               Icons.category,
-                              color: Colors.purpleAccent.shade100,
+                              color: AppColors.pink,
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -155,6 +211,7 @@ class SingleVenueScreen extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
+                                color: AppColors.white,
                               ),
                             ),
                           ],
@@ -168,6 +225,7 @@ class SingleVenueScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
+                      color: AppColors.white,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -175,7 +233,7 @@ class SingleVenueScreen extends StatelessWidget {
                     venue.description,
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.grey.shade300,
+                      color: AppColors.white70,
                       height: 1.5,
                     ),
                   ),
@@ -185,6 +243,7 @@ class SingleVenueScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
+                      color: AppColors.white,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -198,17 +257,17 @@ class SingleVenueScreen extends StatelessWidget {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.purpleAccent.withOpacity(0.1),
+                          color: AppColors.darkerPurple.withOpacity(0.5),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: Colors.purpleAccent.withOpacity(0.3),
+                            color: AppColors.white.withOpacity(0.1),
                             width: 1,
                           ),
                         ),
                         child: Text(
                           amenity,
-                          style: TextStyle(
-                            color: Colors.grey.shade300,
+                          style: const TextStyle(
+                            color: AppColors.white,
                             fontSize: 14,
                           ),
                         ),
@@ -224,31 +283,42 @@ class SingleVenueScreen extends StatelessWidget {
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
+          color: AppColors.black,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: AppColors.black.withOpacity(0.5),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
           ],
         ),
-        child: ElevatedButton(
-          onPressed: () {
-            // TODO: Implement booking logic
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.purpleAccent,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () {
+              // TODO: Implement booking logic or navigate to booking screen
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      VenueBookingScreen(venue: venue), // Pass the venue object
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.darkerPurple,
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
             ),
-          ),
-          child: const Text(
-            'Book this Venue',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+            child: const Text(
+              'Book this Venue',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.white,
+              ),
             ),
           ),
         ),

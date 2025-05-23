@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:eventease/services/admin_service.dart';
-import 'package:eventease/models/user.dart';
+import '../../services/admin_service.dart';
+import '../../models/user.dart';
 
 class AdminUsersScreen extends StatefulWidget {
   const AdminUsersScreen({Key? key}) : super(key: key);
 
   @override
-  _AdminUsersScreenState createState() => _AdminUsersScreenState();
+  State<AdminUsersScreen> createState() => _AdminUsersScreenState();
 }
 
 class _AdminUsersScreenState extends State<AdminUsersScreen> {
@@ -22,16 +22,18 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   }
 
   Future<void> _loadUsers() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
-      final users = await _adminService.getUsers(
-        admin: _showAdminsOnly ? true : null,
-      );
+      final users = await _adminService.getUsers();
+      if (!mounted) return;
       setState(() {
-        _users = users;
+        _users =
+            _showAdminsOnly ? users.where((u) => u.isAdmin).toList() : users;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to load users: $e')),
@@ -41,17 +43,22 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
 
   Future<void> _toggleUserAdmin(String userId) async {
     try {
-      final success = await _adminService.toggleUserAdmin(userId);
-      if (success) {
+      await _adminService.updateUserFirestore(userId, {'isAdmin': true});
+      if (mounted) {
         setState(() {
           final user = _users.firstWhere((u) => u.id == userId);
-          user.isAdmin = !user.isAdmin;
+          _users = _users
+              .map((u) => u.id == userId
+                  ? User.fromJson({...u.toJson(), 'isAdmin': !u.isAdmin})
+                  : u)
+              .toList();
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('User admin status updated')),
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to update user: $e')),
       );
@@ -105,7 +112,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                         children: [
                           Text(user.email),
                           Text(
-                            'Events: ${user.eventsCount}',
+                            user.isAdmin ? 'Admin User' : 'Regular User',
                             style: const TextStyle(fontSize: 12),
                           ),
                         ],

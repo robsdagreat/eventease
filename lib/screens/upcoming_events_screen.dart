@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/event.dart';
 import '../widgets/cards/event_card.dart';
 import 'event_venue_finder_screen.dart';
+import '../theme/app_colors.dart'; // Import AppColors
 
 class UpcomingEventsScreen extends StatefulWidget {
   const UpcomingEventsScreen({Key? key}) : super(key: key);
@@ -40,24 +40,36 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
         description:
             'A fun-filled summer festival with music, food, and activities',
         imageUrl: 'https://picsum.photos/id/1000/400/300',
-        date: DateTime(2025, 6, 15),
-        capacity: 1000,
+        startTime: DateTime(2025, 6, 15),
+        endTime: DateTime(2025, 6, 16),
         eventType: 'Festival',
         venueId: '1',
+        venueName: 'The Elements',
         userId: '1',
-        isApproved: true,
+        organizerName: 'Event Organizers Inc',
+        isPublic: true,
+        expectedAttendees: 1000,
+        status: 'published',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       ),
       Event(
         id: '2',
         name: 'Tech Conference',
         description: 'Annual technology conference featuring industry leaders',
         imageUrl: 'https://picsum.photos/id/1001/400/300',
-        date: DateTime(2025, 5, 22),
-        capacity: 500,
+        startTime: DateTime(2025, 5, 22),
+        endTime: DateTime(2025, 5, 23),
         eventType: 'Corporate',
         venueId: '2',
+        venueName: 'Urban Loft',
         userId: '1',
-        isApproved: true,
+        organizerName: 'Tech Events Co',
+        isPublic: true,
+        expectedAttendees: 500,
+        status: 'published',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       ),
       Event(
         id: '3',
@@ -65,12 +77,18 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
         description:
             'Experience the finest food and wine from around the world',
         imageUrl: 'https://picsum.photos/id/1002/400/300',
-        date: DateTime(2025, 7, 3),
-        capacity: 300,
+        startTime: DateTime(2025, 7, 3),
+        endTime: DateTime(2025, 7, 4),
         eventType: 'Exhibition',
         venueId: '3',
+        venueName: 'Country Mansion',
         userId: '1',
-        isApproved: true,
+        organizerName: 'Gourmet Events',
+        isPublic: true,
+        expectedAttendees: 300,
+        status: 'published',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       ),
     ];
   }
@@ -81,34 +99,25 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
       _errorMessage = null;
     });
 
-    // Simulate network delay (optional)
-    // await Future.delayed(const Duration(milliseconds: 500));
-
     try {
-      // --- REVERTED: Always use demo events ---
       final fetchedEvents = _getDemoEvents();
-      // --- END REVERTED ---
 
-      // Filter for upcoming dates (optional for demo data, but good practice)
+      // Filter for upcoming dates
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
-      final upcomingDemoEvents =
-          fetchedEvents.where((event) => !event.date.isBefore(today)).toList();
-      // Sort demo events by date
-      upcomingDemoEvents.sort((a, b) => a.date.compareTo(b.date));
+      final upcomingDemoEvents = fetchedEvents
+          .where((event) => !event.startTime.isBefore(today))
+          .toList();
+      // Sort demo events by start time
+      upcomingDemoEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
 
       setState(() {
         _events = upcomingDemoEvents;
         _isLoading = false;
-        if (_events.isEmpty) {
-          // Optional: Add a message if even demo data results in no upcoming events
-          // _errorMessage = 'No upcoming demo events found.';
-        }
       });
     } catch (e) {
-      // Keep error handling for potential issues in demo data or filtering
       setState(() {
-        _events = []; // Clear events on error
+        _events = [];
         _errorMessage = 'Error processing demo events. Please try again.';
         _isLoading = false;
       });
@@ -134,6 +143,7 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
+      backgroundColor: AppColors.black,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
@@ -197,6 +207,48 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
                             ),
                           ),
                         ],
+                      ),
+                    ),
+                    const SizedBox(
+                        height: 16), // Added space below the container
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0), // Added horizontal padding
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors
+                                .purple, // Using a purple color similar to the image
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const EventVenueFinderScreen(),
+                              ),
+                            );
+                          },
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Added row for icon and text
+                              Icon(Icons.add,
+                                  color: Colors.white), // Added icon
+                              SizedBox(width: 8), // Added spacing
+                              Text(
+                                'Host Your Own Event',
+                                style: TextStyle(
+                                    fontSize: 16, color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                     // Filter chips

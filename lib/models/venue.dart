@@ -1,94 +1,76 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class Venue {
   final String id;
   final String name;
+  final String description;
   final String location;
+  final String address;
+  final String city;
+  final String state;
+  final String country;
+  final String postalCode;
+  final String venueType; // e.g., 'restaurant', 'hotel', 'conference_center'
+  final int capacity;
   final double rating;
-  final String? imageUrl;
-  final int capacity; // Number of people the venue can accommodate
-  final String
-      venueType; // Type of events the venue is suitable for (e.g., 'Wedding', 'Conference', 'Concert', etc.)
-  final String description; // Detailed description of the venue
-  final List<String> amenities; // List of available amenities
-  final double pricePerHour;
-  final double pricePerDay;
-  final bool isAvailable;
+  final List<String> amenities;
+  final List<String> images;
   final String? contactEmail;
   final String? contactPhone;
   final String? website;
-  final List<String>? images;
-  final Map<String, dynamic>? availability;
   final Map<String, dynamic>? pricing;
-  final List<String>? restrictions;
-  final List<String>? features;
-  final String? address;
-  final String? city;
-  final String? state;
-  final String? country;
-  final String? postalCode;
-  final double? latitude;
-  final double? longitude;
+  final List<String>? specialOffers; // List of special offer IDs
+  final bool isAvailable;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   Venue({
     required this.id,
     required this.name,
-    required this.location,
-    required this.rating,
-    this.imageUrl,
-    required this.capacity,
-    required this.venueType,
     required this.description,
+    required this.location,
+    required this.address,
+    required this.city,
+    required this.state,
+    required this.country,
+    required this.postalCode,
+    required this.venueType,
+    required this.capacity,
+    required this.rating,
     required this.amenities,
-    required this.pricePerHour,
-    required this.pricePerDay,
-    required this.isAvailable,
+    required this.images,
     this.contactEmail,
     this.contactPhone,
     this.website,
-    this.images,
-    this.availability,
     this.pricing,
-    this.restrictions,
-    this.features,
-    this.address,
-    this.city,
-    this.state,
-    this.country,
-    this.postalCode,
-    this.latitude,
-    this.longitude,
+    this.specialOffers,
+    required this.isAvailable,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
   factory Venue.fromJson(Map<String, dynamic> json) {
     return Venue(
       id: json['id'],
       name: json['name'],
-      location: json['location'],
-      rating: json['rating']?.toDouble() ?? 0.0,
-      imageUrl: json['image_url'],
-      capacity: json['capacity'],
-      venueType: json['venue_type'],
       description: json['description'],
-      amenities: List<String>.from(json['amenities'] ?? []),
-      pricePerHour: json['price_per_hour']?.toDouble() ?? 0.0,
-      pricePerDay: json['price_per_day']?.toDouble() ?? 0.0,
-      isAvailable: json['is_available'] ?? true,
-      contactEmail: json['contact_email'],
-      contactPhone: json['contact_phone'],
-      website: json['website'],
-      images: List<String>.from(json['images'] ?? []),
-      availability: json['availability'],
-      pricing: json['pricing'],
-      restrictions: List<String>.from(json['restrictions'] ?? []),
-      features: List<String>.from(json['features'] ?? []),
+      location: json['location'],
       address: json['address'],
       city: json['city'],
       state: json['state'],
       country: json['country'],
       postalCode: json['postal_code'],
-      latitude: json['latitude']?.toDouble(),
-      longitude: json['longitude']?.toDouble(),
+      venueType: json['venue_type'],
+      capacity: json['capacity'],
+      rating: json['rating']?.toDouble() ?? 0.0,
+      amenities: List<String>.from(json['amenities'] ?? []),
+      images: List<String>.from(json['images'] ?? []),
+      contactEmail: json['contact_email'],
+      contactPhone: json['contact_phone'],
+      website: json['website'],
+      pricing: json['pricing'],
+      specialOffers: List<String>.from(json['special_offers'] ?? []),
+      isAvailable: json['is_available'] ?? true,
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
     );
   }
 
@@ -96,31 +78,78 @@ class Venue {
     return {
       'id': id,
       'name': name,
-      'location': location,
-      'rating': rating,
-      'image_url': imageUrl,
-      'capacity': capacity,
-      'venue_type': venueType,
       'description': description,
-      'amenities': amenities,
-      'price_per_hour': pricePerHour,
-      'price_per_day': pricePerDay,
-      'is_available': isAvailable,
-      'contact_email': contactEmail,
-      'contact_phone': contactPhone,
-      'website': website,
-      'images': images,
-      'availability': availability,
-      'pricing': pricing,
-      'restrictions': restrictions,
-      'features': features,
+      'location': location,
       'address': address,
       'city': city,
       'state': state,
       'country': country,
       'postal_code': postalCode,
-      'latitude': latitude,
-      'longitude': longitude,
+      'venue_type': venueType,
+      'capacity': capacity,
+      'rating': rating,
+      'amenities': amenities,
+      'images': images,
+      'contact_email': contactEmail,
+      'contact_phone': contactPhone,
+      'website': website,
+      'pricing': pricing,
+      'special_offers': specialOffers,
+      'is_available': isAvailable,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
     };
+  }
+
+  Venue copyWith({
+    String? id,
+    String? name,
+    String? description,
+    String? location,
+    String? address,
+    String? city,
+    String? state,
+    String? country,
+    String? postalCode,
+    double? latitude,
+    double? longitude,
+    String? venueType,
+    int? capacity,
+    double? rating,
+    List<String>? amenities,
+    List<String>? images,
+    String? contactEmail,
+    String? contactPhone,
+    String? website,
+    Map<String, dynamic>? pricing,
+    List<String>? specialOffers,
+    bool? isAvailable,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return Venue(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      location: location ?? this.location,
+      address: address ?? this.address,
+      city: city ?? this.city,
+      state: state ?? this.state,
+      country: country ?? this.country,
+      postalCode: postalCode ?? this.postalCode,
+      venueType: venueType ?? this.venueType,
+      capacity: capacity ?? this.capacity,
+      rating: rating ?? this.rating,
+      amenities: amenities ?? this.amenities,
+      images: images ?? this.images,
+      contactEmail: contactEmail ?? this.contactEmail,
+      contactPhone: contactPhone ?? this.contactPhone,
+      website: website ?? this.website,
+      pricing: pricing ?? this.pricing,
+      specialOffers: specialOffers ?? this.specialOffers,
+      isAvailable: isAvailable ?? this.isAvailable,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
   }
 }
