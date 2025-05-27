@@ -36,7 +36,7 @@ if (flutterVersionName == null) {
 
 android {
     namespace "com.example.eventease"
-    compileSdkVersion 35
+    compileSdkVersion flutter.compileSdkVersion
     ndkVersion "25.1.8937393"
 
     compileOptions {
@@ -55,16 +55,25 @@ android {
 
     defaultConfig {
         applicationId "com.example.eventease"
-        minSdkVersion flutter.minSdkVersion
-        targetSdkVersion 35
-        versionCode flutterVersionCode.toInteger()
-        versionName flutterVersionName
+        minSdkVersion 21
+        targetSdkVersion flutter.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
         multiDexEnabled true
+        manifestPlaceholders = [
+            'appAuthRedirectScheme': 'com.example.eventease'
+        ]
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.debug
+            signingConfig signingConfigs.debug
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            applicationIdSuffix ".debug"
+            debuggable true
         }
     }
 }
@@ -82,4 +91,8 @@ dependencies {
     implementation 'com.google.firebase:firebase-appcheck'
     implementation 'com.google.firebase:firebase-appcheck-playintegrity'
     implementation 'com.android.support:multidex:1.0.3'
+    implementation 'com.google.android.gms:play-services-base:18.2.0'
+    implementation 'com.google.android.gms:play-services-auth:20.7.0'
+    implementation 'com.google.android.gms:play-services-safetynet:18.0.1'
+    implementation 'com.google.android.gms:play-services-phenotype:17.0.0'
 }

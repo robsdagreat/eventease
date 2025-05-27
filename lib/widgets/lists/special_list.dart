@@ -1,23 +1,32 @@
 import 'package:flutter/material.dart';
 import '../../models/special.dart';
-import '../animated_slide_card.dart';
+import '../../theme/app_colors.dart';
 import '../cards/special_card.dart';
 
 class SpecialList extends StatelessWidget {
   final List<Special> specials;
 
-  const SpecialList({Key? key, required this.specials}) : super(key: key);
+  const SpecialList({
+    Key? key,
+    required this.specials,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    if (specials.isEmpty) {
+      return const Center(
+        child: Text(
+          'No specials available',
+          style: TextStyle(color: AppColors.white70),
+        ),
+      );
+    }
+
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       itemCount: specials.length,
       itemBuilder: (context, index) {
-        return AnimatedSlideCard(
-          index: index,
-          child: SpecialCard(special: specials[index]),
-        );
+        final special = specials[index];
+        return SpecialCard(special: special);
       },
     );
   }

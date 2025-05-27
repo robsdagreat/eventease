@@ -7,6 +7,7 @@ import 'auth_screen.dart'; // Import AuthScreen
 import '../services/booking_service.dart'; // Import BookingService
 import '../models/booking.dart'; // Import Booking model
 import 'landing_page.dart'; // Import LandingPage for navigation
+import '../main.dart'; // Import MainNavigation for bottom nav
 
 class VenueBookingScreen extends StatefulWidget {
   final Venue venue;
@@ -27,6 +28,7 @@ class _VenueBookingScreenState extends State<VenueBookingScreen> {
 
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
+  TimeOfDay? _selectedEndTime;
 
   @override
   void dispose() {
@@ -64,6 +66,45 @@ class _VenueBookingScreenState extends State<VenueBookingScreen> {
     }
   }
 
+  Future<void> _selectEndTime(BuildContext context) async {
+    if (_selectedTime == null) {
+      // Optionally show a message asking user to select start time first
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a start time first.')),
+      );
+      return;
+    }
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: _selectedEndTime ?? _selectedTime!,
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          // Wrap with Theme to apply custom styles
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: AppColors.pink, // Accent color
+              onPrimary: AppColors.white, // Text color on primary
+              surface: AppColors.darkGrey, // Background color
+              onSurface: AppColors.white, // Text color on surface
+            ),
+            textButtonTheme: TextButtonThemeData(
+              // Button styles
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.pink, // Button text color
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (pickedTime != null && pickedTime != _selectedEndTime) {
+      setState(() {
+        _selectedEndTime = pickedTime;
+      });
+    }
+  }
+
   void _bookVenue() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
@@ -85,13 +126,39 @@ class _VenueBookingScreenState extends State<VenueBookingScreen> {
 
         final bookingDate = _selectedDate!;
         final bookingTime = _selectedTime!.format(context);
+        final bookingEndTime = _selectedEndTime!.format(context);
         final numberOfGuests = int.parse(_guestsController.text);
+
+        // Combine selected date and time into DateTime objects
+        final startDateTime = DateTime(
+          bookingDate.year,
+          bookingDate.month,
+          bookingDate.day,
+          _selectedTime!.hour,
+          _selectedTime!.minute,
+        );
+        final endDateTime = DateTime(
+          bookingDate.year,
+          bookingDate.month,
+          bookingDate.day,
+          _selectedEndTime!.hour,
+          _selectedEndTime!.minute,
+        );
+
+        // Basic validation: End time must be after start time on the same day
+        if (endDateTime.isBefore(startDateTime)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('End time must be after start time.')),
+          );
+          return; // Stop the booking process
+        }
 
         final booking = Booking(
           id: '', // Firebase will generate the ID
           venueId: widget.venue.id,
           userId: userId,
-          date: bookingDate,
+          startTime: startDateTime,
+          endTime: endDateTime,
           time: bookingTime,
           numberOfGuests: numberOfGuests,
           createdAt: DateTime.now(),
@@ -107,7 +174,7 @@ class _VenueBookingScreenState extends State<VenueBookingScreen> {
           await Future.delayed(
               const Duration(milliseconds: 500)); // Let user see the toast
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const LandingPage()),
+            MaterialPageRoute(builder: (context) => const MainNavigation()),
             (route) => false,
           );
         }
@@ -207,6 +274,37 @@ class _VenueBookingScreenState extends State<VenueBookingScreen> {
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please select a time';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    TextFormField(
+                      controller: TextEditingController(
+                          text: _selectedEndTime
+                              ?.format(context)), // Display selected end time
+                      readOnly: true,
+                      style: const TextStyle(color: AppColors.white),
+                      decoration: InputDecoration(
+                        labelText: 'End Time',
+                        hintText: 'Select End Time',
+                        hintStyle: const TextStyle(color: AppColors.white70),
+                        labelStyle: const TextStyle(color: AppColors.white70),
+                        prefixIcon: const Icon(Icons.access_time,
+                            color: AppColors.white70),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: AppColors.darkGrey,
+                      ),
+                      onTap: () => _selectEndTime(
+                          context), // Call new select end time method
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please select an end time';
                         }
                         return null;
                       },

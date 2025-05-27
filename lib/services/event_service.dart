@@ -3,7 +3,9 @@ import '../models/event.dart';
 import 'api_service.dart';
 
 class EventService {
-  final ApiService _apiService = ApiService();
+  final ApiService _apiService;
+
+  EventService(this._apiService);
 
   Future<List<Event>> getAllEvents() async {
     try {

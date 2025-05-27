@@ -49,7 +49,7 @@ class Venue {
 
   factory Venue.fromJson(Map<String, dynamic> json) {
     return Venue(
-      id: json['id'],
+      id: json['id'].toString(),
       name: json['name'],
       description: json['description'],
       location: json['location'],
@@ -57,8 +57,8 @@ class Venue {
       city: json['city'],
       state: json['state'],
       country: json['country'],
-      postalCode: json['postal_code'],
-      venueType: json['venue_type'],
+      postalCode: json['postal_code'].toString(),
+      venueType: json['venue_type'].toString(),
       capacity: json['capacity'],
       rating: json['rating']?.toDouble() ?? 0.0,
       amenities: List<String>.from(json['amenities'] ?? []),
@@ -67,7 +67,9 @@ class Venue {
       contactPhone: json['contact_phone'],
       website: json['website'],
       pricing: json['pricing'],
-      specialOffers: List<String>.from(json['special_offers'] ?? []),
+      specialOffers: json['special_offers'] == null
+          ? null
+          : List<String>.from(json['special_offers']),
       isAvailable: json['is_available'] ?? true,
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),

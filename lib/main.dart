@@ -3,7 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'screens/auth_screen.dart';
 import 'screens/landing_page.dart';
-import 'screens/admin/admin_dashboard_screen.dart';
+//import 'screens/admin/admin_dashboard_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/upcoming_events_screen.dart';
 import 'screens/venues_screen.dart';
@@ -15,11 +15,18 @@ import 'models/event.dart';
 import 'widgets/cards/special_card.dart';
 import 'models/special.dart';
 import 'services/booking_service.dart';
+import 'services/api_service.dart';
+import 'services/event_service.dart';
+import 'services/venue_service.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
+  );
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: AndroidProvider.debug,
   );
   runApp(const MyApp());
 }
@@ -33,6 +40,18 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthService()),
         ChangeNotifierProvider(create: (_) => BookingService()),
+        Provider<ApiService>(create: (context) {
+          final authService = Provider.of<AuthService>(context, listen: false);
+          return ApiService(authService);
+        }),
+        Provider<EventService>(create: (context) {
+          final apiService = Provider.of<ApiService>(context, listen: false);
+          return EventService(apiService);
+        }),
+        Provider<VenueService>(create: (context) {
+          final apiService = Provider.of<ApiService>(context, listen: false);
+          return VenueService(apiService);
+        }),
       ],
       child: MaterialApp(
         title: 'EventEase',
@@ -41,9 +60,6 @@ class MyApp extends StatelessWidget {
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
         home: const MainNavigation(),
-        routes: {
-          '/admin': (context) => const AdminDashboardScreen(),
-        },
       ),
     );
   }
@@ -73,7 +89,7 @@ class _MainNavigationState extends State<MainNavigation> {
       const LandingPage(),
       const UpcomingEventsScreen(),
       const VenuesScreen(),
-      SpecialsScreen(),
+      const SpecialsScreen(),
       isLoggedIn ? const ProfileScreen() : const AuthScreen(),
     ];
 
@@ -149,7 +165,7 @@ class HomeScreen extends StatelessWidget {
         eventType: 'Festival',
         venueId: '1',
         venueName: 'The Elements',
-        userId: '1234',
+        firebase_user_id: '1234',
         organizerName: 'Event Organizers Inc',
         isPublic: true,
         expectedAttendees: 1000,
@@ -167,7 +183,7 @@ class HomeScreen extends StatelessWidget {
         eventType: 'Conference',
         venueId: '2',
         venueName: 'Urban Loft',
-        userId: '1',
+        firebase_user_id: '1',
         organizerName: 'Tech Events Co',
         isPublic: true,
         expectedAttendees: 500,
@@ -417,129 +433,6 @@ class _NavChip extends StatelessWidget {
           color: selected ? Colors.white : Colors.white70,
           fontWeight: FontWeight.bold,
         ),
-      ),
-    );
-  }
-}
-
-class SpecialsScreen extends StatefulWidget {
-  @override
-  State<SpecialsScreen> createState() => _SpecialsScreenState();
-}
-
-class _SpecialsScreenState extends State<SpecialsScreen> {
-  final List<String> _filterOptions = [
-    'All',
-    'Weekend',
-    'Spa',
-    'Tour',
-    'Other'
-  ];
-  String _selectedFilter = 'All';
-
-  // Dummy specials data
-  final List<Special> _specials = [
-    Special(
-      id: '1',
-      title: 'Beach Resort Weekend',
-      description: 'Enjoy a luxurious weekend at our beach resort',
-      venueId: '1',
-      venueName: 'The Elements',
-      imageUrl: 'https://picsum.photos/id/1010/400/300',
-      startDate: DateTime(2025, 6, 1),
-      endDate: DateTime(2025, 6, 30),
-      type: 'Weekend',
-      discountPercentage: 30.0,
-      isActive: true,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    ),
-    Special(
-      id: '2',
-      title: 'Spa Retreat Package',
-      description: 'Relax and rejuvenate with our special spa package',
-      venueId: '2',
-      venueName: 'Urban Loft',
-      imageUrl: 'https://picsum.photos/id/1011/400/300',
-      startDate: DateTime(2025, 5, 1),
-      endDate: DateTime(2025, 5, 31),
-      type: 'Spa',
-      discountPercentage: 25.0,
-      isActive: true,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    ),
-    Special(
-      id: '3',
-      title: 'City Tour Bundle',
-      description: 'Explore the city with our comprehensive tour package',
-      venueId: '3',
-      venueName: 'Country Mansion',
-      imageUrl: 'https://picsum.photos/id/1012/400/300',
-      startDate: DateTime(2025, 7, 1),
-      endDate: DateTime(2025, 7, 31),
-      type: 'Tour',
-      discountPercentage: 40.0,
-      isActive: true,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    ),
-  ];
-
-  List<Special> get _filteredSpecials {
-    if (_selectedFilter == 'All') {
-      return _specials;
-    }
-    return _specials
-        .where((special) =>
-            special.type.toLowerCase() == _selectedFilter.toLowerCase())
-        .toList();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: const Text('Special Offers'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: Column(
-        children: [
-          // Filter chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
-            child: Row(
-              children: _filterOptions.map((option) {
-                final selected = _selectedFilter == option;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: FilterChip(
-                    label: Text(option),
-                    selected: selected,
-                    onSelected: (selected) {
-                      setState(() {
-                        _selectedFilter = option;
-                      });
-                    },
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          // Specials list
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
-              itemCount: _filteredSpecials.length,
-              itemBuilder: (context, index) {
-                return SpecialCard(special: _filteredSpecials[index]);
-              },
-            ),
-          ),
-        ],
       ),
     );
   }

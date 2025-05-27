@@ -10,6 +10,7 @@ import '../models/venue.dart';
 import '../models/event.dart';
 import '../models/booking.dart';
 import '../services/venue_service.dart';
+import '../services/api_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -29,14 +30,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late BookingService _bookingService;
   late EventService _eventService;
   late VenueService _venueService;
+  late ApiService _apiService;
 
   @override
   void initState() {
     super.initState();
     _authService = Provider.of<AuthService>(context, listen: false);
     _bookingService = Provider.of<BookingService>(context, listen: false);
-    _eventService = EventService();
-    _venueService = VenueService();
+    _apiService = ApiService(_authService);
+    _eventService = EventService(_apiService);
+    _venueService = VenueService(_apiService);
     _loadUserData();
   }
 
@@ -134,6 +137,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isLoggedIn = _authService.currentUser != null;
+    if (!isLoggedIn) {
+      print('User not logged in. Showing fallback message.');
+      return Scaffold(
+        backgroundColor: AppColors.black,
+        appBar: AppBar(
+          title: const Text('Profile'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: AppColors.white),
+        ),
+        body: const Center(
+          child: Text(
+            'Please log in to view your profile and bookings.',
+            style: TextStyle(color: AppColors.white70, fontSize: 18),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.black,
       appBar: AppBar(
@@ -384,19 +408,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
               StreamBuilder<List<Booking>>(
                 stream: _bookingService.getUserBookings(),
                 builder: (context, snapshot) {
+                  print(
+                      'StreamBuilder: connectionState = \${snapshot.connectionState}, hasData = \${snapshot.hasData}, error = \${snapshot.error}');
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
+                  if (snapshot.hasError) {
+                    print('StreamBuilder error: \${snapshot.error}');
+                    return const Text(
+                        'Error loading bookings: \${snapshot.error}',
+                        style: TextStyle(color: Colors.redAccent));
+                  }
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    print('No bookings found for user.');
                     return const Text('No bookings yet.',
                         style: TextStyle(color: AppColors.white70));
                   }
                   final bookings = snapshot.data!;
+                  print('Fetched bookings: \${bookings.length}');
                   return Column(
                     children: bookings.map((booking) {
+                      print(
+                          'Booking: id=\${booking.id}, venueId=\${booking.venueId}, startTime=\${booking.startTime}, endTime=\${booking.endTime}, time=\${booking.time}');
                       return FutureBuilder<Venue?>(
                         future: _getVenueById(booking.venueId),
                         builder: (context, venueSnapshot) {
+                          print(
+                              'FutureBuilder for venueId=\${booking.venueId}: connectionState=\${venueSnapshot.connectionState}, hasData=\${venueSnapshot.hasData}, error=\${venueSnapshot.error}');
                           if (venueSnapshot.connectionState ==
                               ConnectionState.waiting) {
                             return const SizedBox(
@@ -404,9 +442,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child:
                                     Center(child: CircularProgressIndicator()));
                           }
+                          if (venueSnapshot.hasError) {
+                            print('Venue fetch error: \${venueSnapshot.error}');
+                            return Text(
+                                'Error loading venue: \${venueSnapshot.error}',
+                                style: TextStyle(color: Colors.redAccent));
+                          }
                           if (!venueSnapshot.hasData ||
                               venueSnapshot.data == null) {
-                            return const SizedBox();
+                            print(
+                                'Venue not found for venueId=\${booking.venueId}');
+                            return const ListTile(
+                              title: Text('Venue not found',
+                                  style: TextStyle(color: Colors.orangeAccent)),
+                              subtitle: Text(
+                                  'This booking references a missing venue.',
+                                  style: TextStyle(color: AppColors.white70)),
+                            );
                           }
                           final venue = venueSnapshot.data!;
                           return Card(
@@ -417,7 +469,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   style:
                                       const TextStyle(color: AppColors.white)),
                               subtitle: Text(
-                                  '${booking.date.toLocal().toString().split(' ')[0]} - ${booking.time}',
+                                  '${booking.startTime.toLocal().toString().split(' ')[0]} - ${booking.time}',
                                   style: const TextStyle(
                                       color: AppColors.white70)),
                               trailing: Text('${venue.city}',

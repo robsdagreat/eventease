@@ -95,7 +95,7 @@ class _SearchPageState extends State<SearchPage> {
       _filteredSpecials = widget.specials
           .where((special) =>
               special.title.toLowerCase().contains(_searchQuery) ||
-              special.venueName.toLowerCase().contains(_searchQuery) ||
+              special.establishmentName.toLowerCase().contains(_searchQuery) ||
               '${special.discountPercentage}%'
                   .toLowerCase()
                   .contains(_searchQuery))

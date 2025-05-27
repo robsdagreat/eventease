@@ -9,6 +9,7 @@ import '../models/event.dart';
 import '../services/auth_service.dart';
 import '../screens/auth_screen.dart';
 import '../theme/app_colors.dart';
+import '../services/api_service.dart';
 
 class EventRegistrationScreen extends StatefulWidget {
   final EventType eventType;
@@ -34,23 +35,24 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
   final _hostNameController = TextEditingController();
   final _hostContactController = TextEditingController();
   final _hostDescriptionController = TextEditingController();
+  final _ticketPriceController = TextEditingController();
   DateTime? _selectedDate;
   bool _isLoading = false;
   String? _errorMessage;
   File? _imageFile;
   String? _uploadedImageUrl;
+  String? _enteredImageUrl;
   final ImagePicker _imagePicker = ImagePicker();
   late AuthService _authService;
   String _hostType = 'personal';
   bool _isPublic = false;
+  late ApiService _apiService;
 
   @override
   void initState() {
     super.initState();
     _authService = Provider.of<AuthService>(context, listen: false);
-    // Set venue image as default
-    _uploadedImageUrl =
-        widget.venue.images.isNotEmpty ? widget.venue.images.first : null;
+    _apiService = Provider.of<ApiService>(context, listen: false);
 
     // Check authentication state immediately
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -72,6 +74,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
     _hostNameController.dispose();
     _hostContactController.dispose();
     _hostDescriptionController.dispose();
+    _ticketPriceController.dispose();
     super.dispose();
   }
 
@@ -133,30 +136,55 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
 
   Future<String?> _uploadImage() async {
     if (_imageFile == null) {
-      return _uploadedImageUrl; // Return existing URL if no new image
+      print('No image file to upload.');
+      return null;
     }
 
     try {
+      print('Preparing to upload image...');
       final storageRef = FirebaseStorage.instance
           .ref()
           .child('event_images')
           .child('${DateTime.now().millisecondsSinceEpoch}.jpg');
 
+      print('Starting upload task...');
       final uploadTask = storageRef.putFile(_imageFile!);
+
+      // Listen for progress/errors
+      uploadTask.snapshotEvents.listen((event) {
+        print('Upload progress: ${event.bytesTransferred}/${event.totalBytes}');
+      }, onError: (e) {
+        print('Upload error: $e');
+      });
+
       final snapshot = await uploadTask.whenComplete(() {});
+      print('Upload complete, getting download URL...');
       final downloadUrl = await snapshot.ref.getDownloadURL();
+      print('Download URL: $downloadUrl');
       return downloadUrl;
     } catch (e) {
-      debugPrint('Error uploading image: $e');
+      print('Error uploading image: $e');
       throw Exception('Failed to upload image');
     }
   }
 
   Future<void> _registerEvent() async {
+    print('Starting event registration');
     if (!_formKey.currentState!.validate() || _selectedDate == null) {
       setState(() {
         _errorMessage = 'Please fill in all required fields';
       });
+      print('Validation failed: missing required fields');
+      return;
+    }
+
+    // Validate that an image is selected or a URL is provided
+    if (_imageFile == null &&
+        (_enteredImageUrl == null || _enteredImageUrl!.isEmpty)) {
+      setState(() {
+        _errorMessage = 'Please select an event image or enter an image URL';
+      });
+      print('Validation failed: no image selected or URL entered');
       return;
     }
 
@@ -165,6 +193,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
       setState(() {
         _errorMessage = 'Event date cannot be in the past';
       });
+      print('Validation failed: date in the past');
       return;
     }
 
@@ -175,6 +204,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
         _errorMessage =
             'Capacity must be between ${widget.eventType.minCapacity} and ${widget.eventType.maxCapacity} people';
       });
+      print('Validation failed: capacity out of bounds');
       return;
     }
 
@@ -186,8 +216,19 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
         setState(() {
           _errorMessage = 'Please fill in all host information fields';
         });
+        print('Validation failed: missing professional host info');
         return;
       }
+    }
+
+    // Validate ticket price
+    final ticketPrice = double.tryParse(_ticketPriceController.text);
+    if (ticketPrice == null || ticketPrice < 0) {
+      setState(() {
+        _errorMessage = 'Please enter a valid ticket price.';
+      });
+      print('Validation failed: invalid ticket price');
+      return;
     }
 
     setState(() {
@@ -202,13 +243,22 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
           _errorMessage = 'Please sign in to register an event';
           _isLoading = false;
         });
+        print('Validation failed: user not signed in');
         return;
       }
 
-      // Upload image if a new one was selected
-      final imageUrl = await _uploadImage();
-      if (imageUrl == null && _uploadedImageUrl == null) {
-        throw Exception('Failed to get image URL');
+      String? imageUrl;
+      if (_imageFile != null) {
+        // Upload image if a new one was selected
+        print('Uploading image to Firebase...');
+        imageUrl = await _uploadImage();
+        print('Image upload complete. URL: $imageUrl');
+        if (imageUrl == null) {
+          throw Exception('Failed to get image URL');
+        }
+      } else if (_enteredImageUrl != null && _enteredImageUrl!.isNotEmpty) {
+        imageUrl = _enteredImageUrl;
+        print('Using entered image URL: $imageUrl');
       }
 
       final event = Event(
@@ -232,29 +282,37 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
         eventType: widget.eventType.name,
         venueId: widget.venue.id,
         venueName: widget.venue.name,
-        userId: currentUser.id,
+        firebase_user_id: currentUser.id,
         organizerName: _hostType == 'professional'
             ? _hostNameController.text.trim()
             : 'Private Host',
         isPublic: _isPublic,
         expectedAttendees: widget.expectedCapacity,
-        imageUrl: imageUrl ?? _uploadedImageUrl,
-        status: 'draft',
+        imageUrl: imageUrl,
+        status: 'upcoming',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        ticketPrice: ticketPrice,
+        tags: [], // Assuming tags are not required for now
+        contactEmail: _hostType == 'professional'
+            ? _hostContactController.text.trim()
+            : null,
+        contactPhone: _hostType == 'personal'
+            ? _hostContactController.text.trim()
+            : null, // Assuming personal contact is phone
       );
 
-      debugPrint('--- Skipping Firestore Save (Using Demo Mode) ---');
-      debugPrint('Event Data: ${event.toJson()}'); // Log for verification
-
-      // Simulate success delay (optional)
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Call the API service to create the event with a timeout
+      print('Sending event to backend...');
+      await _apiService.createEvent(event).timeout(const Duration(seconds: 30));
+      print('Event created successfully!');
 
       if (mounted) {
+        // Navigate back on success
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Event registered successfully! (Demo)'),
+            content: Text('Event registered successfully!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -263,7 +321,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
       setState(() {
         _errorMessage = 'Error registering event. Please try again.';
       });
-      debugPrint('Error registering event: $e');
+      print('Error registering event: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -339,6 +397,30 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                   ),
                 ),
               ),
+              // Event Image URL Option
+              TextFormField(
+                decoration: InputDecoration(
+                  labelText: 'Or Enter Image URL',
+                  hintText: 'Paste an image URL (https://...)',
+                  labelStyle: const TextStyle(color: AppColors.white70),
+                  hintStyle: const TextStyle(color: AppColors.white70),
+                  prefixIcon: const Icon(Icons.link, color: AppColors.white70),
+                  contentPadding: const EdgeInsets.all(20),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: AppColors.darkGrey,
+                ),
+                style: const TextStyle(color: AppColors.white),
+                onChanged: (value) {
+                  setState(() {
+                    _enteredImageUrl = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 16),
               // Event Image Picker
               Center(
                 child: GestureDetector(
@@ -650,6 +732,14 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                     if (value == null || value.trim().isEmpty) {
                       return 'Please enter contact information';
                     }
+                    if (_hostType == 'professional') {
+                      // Email validation for professional hosts
+                      final emailRegex =
+                          RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                      if (!emailRegex.hasMatch(value.trim())) {
+                        return 'Please enter a valid email address';
+                      }
+                    }
                     return null;
                   },
                 ),
@@ -682,6 +772,52 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                 ),
                 const SizedBox(height: 16),
               ],
+
+              // Ticket Price
+              TextFormField(
+                controller: _ticketPriceController,
+                style: const TextStyle(color: AppColors.white),
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: 'Ticket Price (Optional)',
+                  hintText: 'Enter ticket price',
+                  labelStyle: const TextStyle(color: AppColors.white70),
+                  hintStyle: const TextStyle(color: AppColors.white70),
+                  prefixIcon:
+                      const Icon(Icons.attach_money, color: AppColors.white70),
+                  contentPadding: const EdgeInsets.all(20),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: AppColors.white.withOpacity(0.3),
+                      width: 1.5,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: AppColors.pink,
+                      width: 2,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: AppColors.darkGrey,
+                ),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    final price = double.tryParse(value);
+                    if (price == null || price < 0) {
+                      return 'Please enter a valid positive number for ticket price.';
+                    }
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
 
               // Error message
               if (_errorMessage != null)

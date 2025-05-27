@@ -1,4 +1,3 @@
-
 class Event {
   final String id;
   final String name;
@@ -8,7 +7,7 @@ class Event {
   final String eventType;
   final String venueId;
   final String venueName;
-  final String userId;
+  final String firebase_user_id;
   final String organizerName;
   final bool isPublic;
   final int expectedAttendees;
@@ -30,7 +29,7 @@ class Event {
     required this.eventType,
     required this.venueId,
     required this.venueName,
-    required this.userId,
+    required this.firebase_user_id,
     required this.organizerName,
     required this.isPublic,
     required this.expectedAttendees,
@@ -46,15 +45,16 @@ class Event {
 
   factory Event.fromJson(Map<String, dynamic> json) {
     return Event(
-      id: json['id'],
+      id: json['id'].toString(),
       name: json['name'],
       description: json['description'],
       startTime: DateTime.parse(json['start_time']),
       endTime: DateTime.parse(json['end_time']),
-      eventType: json['event_type'],
-      venueId: json['venue_id'],
+      eventType: json['event_type'].toString(),
+      venueId: json['venue_id'].toString(),
       venueName: json['venue_name'],
-      userId: json['user_id'],
+      firebase_user_id:
+          (json['user_id'] ?? json['firebase_user_id'] ?? '').toString(),
       organizerName: json['organizer_name'],
       isPublic: json['is_public'] ?? false,
       expectedAttendees: json['expected_attendees'] ?? 0,
@@ -79,7 +79,7 @@ class Event {
       'event_type': eventType,
       'venue_id': venueId,
       'venue_name': venueName,
-      'user_id': userId,
+      'firebase_user_id': firebase_user_id,
       'organizer_name': organizerName,
       'is_public': isPublic,
       'expected_attendees': expectedAttendees,
@@ -103,7 +103,7 @@ class Event {
     String? eventType,
     String? venueId,
     String? venueName,
-    String? userId,
+    String? firebase_user_id,
     String? organizerName,
     bool? isPublic,
     int? expectedAttendees,
@@ -125,7 +125,7 @@ class Event {
       eventType: eventType ?? this.eventType,
       venueId: venueId ?? this.venueId,
       venueName: venueName ?? this.venueName,
-      userId: userId ?? this.userId,
+      firebase_user_id: firebase_user_id ?? this.firebase_user_id,
       organizerName: organizerName ?? this.organizerName,
       isPublic: isPublic ?? this.isPublic,
       expectedAttendees: expectedAttendees ?? this.expectedAttendees,

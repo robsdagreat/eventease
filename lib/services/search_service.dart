@@ -56,7 +56,7 @@ class SearchService {
     results.addAll(specials.where((special) =>
         special.title.toLowerCase().contains(queryLower) ||
         special.description.toLowerCase().contains(queryLower) ||
-        special.venueName.toLowerCase().contains(queryLower)));
+        special.establishmentName.toLowerCase().contains(queryLower)));
 
     return results;
   }

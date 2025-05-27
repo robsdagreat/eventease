@@ -15,6 +15,45 @@ class BookingService extends ChangeNotifier {
     final bookingData = booking.toJson();
     bookingData['userId'] = _auth.currentUser!.uid;
 
+    // --- Overlap Check ---
+    // Fetch bookings for the same venue that fall within the date range of the new booking
+    // Firestore queries on Timestamp fields often work best with range comparisons.
+    // However, checking for *overlap* of two ranges is complex in Firestore.
+    // A common pattern is to fetch bookings for the same day/venue and check for overlap client-side.
+
+    // Fetch all bookings for this venue on the SAME DAY as the new booking's start time.
+    // This assumes bookings for a venue don't typically span multiple days.
+    // If bookings can span days, a more complex query might be needed.
+    final startOfDay = DateTime(
+        booking.startTime.year, booking.startTime.month, booking.startTime.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+
+    final existingBookingsQuery = await _firestore
+        .collection('bookings')
+        .where('venueId', isEqualTo: booking.venueId)
+        .where('startTime', isGreaterThanOrEqualTo: startOfDay)
+        .where('startTime', isLessThan: endOfDay)
+        .get();
+
+    bool hasOverlap = existingBookingsQuery.docs.any((doc) {
+      try {
+        final existingBooking = Booking.fromDocument(doc);
+        // Check for overlap: [start1, end1] overlaps with [start2, end2] if start1 < end2 && end1 > start2
+        return booking.startTime.isBefore(existingBooking.endTime) &&
+            booking.endTime.isAfter(existingBooking.startTime);
+      } catch (e) {
+        // Log error if a document fails to parse as Booking
+        debugPrint('Error parsing existing booking document \\${doc.id}: \\$e');
+        return false; // Treat as no overlap if document is invalid
+      }
+    });
+
+    if (hasOverlap) {
+      throw Exception(
+          'Venue is already booked during the selected time range.');
+    }
+    // --- End Overlap Check ---
+
     await _firestore.collection('bookings').add(bookingData);
   }
 

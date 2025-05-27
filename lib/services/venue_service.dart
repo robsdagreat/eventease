@@ -3,7 +3,9 @@ import '../models/venue.dart';
 import 'api_service.dart';
 
 class VenueService {
-  final ApiService _apiService = ApiService();
+  final ApiService _apiService;
+
+  VenueService(this._apiService);
 
   Future<Venue?> getVenueById(String venueId) async {
     try {

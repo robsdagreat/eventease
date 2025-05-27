@@ -7,6 +7,7 @@ import '../services/auth_service.dart';
 import 'package:provider/provider.dart';
 import 'auth_screen.dart';
 import '../theme/app_colors.dart';
+import '../services/api_service.dart';
 
 class EventVenueFinderScreen extends StatefulWidget {
   const EventVenueFinderScreen({Key? key}) : super(key: key);
@@ -21,6 +22,7 @@ class _EventVenueFinderScreenState extends State<EventVenueFinderScreen> {
   bool _isLoading = false;
   String? _errorMessage;
   late AuthService _authService;
+  late ApiService _apiService;
 
   List<EventType> _eventTypes = [];
   EventType? _selectedEventType;
@@ -28,8 +30,14 @@ class _EventVenueFinderScreenState extends State<EventVenueFinderScreen> {
   @override
   void initState() {
     super.initState();
-    _authService = Provider.of<AuthService>(context, listen: false);
     _eventTypes = EventType.types;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _authService = Provider.of<AuthService>(context, listen: false);
+    _apiService = ApiService(_authService);
     _fetchSuggestedVenues();
   }
 
@@ -63,185 +71,34 @@ class _EventVenueFinderScreenState extends State<EventVenueFinderScreen> {
       _isLoading = true;
       _errorMessage = null;
     });
-
-    // Simulate network delay (optional)
-    // await Future.delayed(const Duration(milliseconds: 500));
-
     try {
       final capacity = int.tryParse(_capacityController.text) ?? 0;
-
-      // --- REVERTED: Always use demo venues ---
-      List<Venue> sourceVenues = _getDemoVenues();
-      List<Venue> venues = [];
-      // --- END REVERTED ---
-
-      // Keep client-side filtering
-      venues = sourceVenues.where((venue) {
+      final eventType = _selectedEventType?.name;
+      final venues = await _apiService.getVenues();
+      // Filter client-side as before
+      final filteredVenues = venues.where((venue) {
         final capacityMatch = capacity <= 0 || venue.capacity >= capacity;
-        final typeMatch = _selectedEventType == null ||
-            venue.venueType.toLowerCase() ==
-                _selectedEventType!.name.toLowerCase() ||
+        final typeMatch = eventType == null ||
+            venue.venueType.toLowerCase() == eventType.toLowerCase() ||
             venue.venueType == 'Multi-purpose';
         return capacityMatch && typeMatch;
       }).toList();
-
       setState(() {
-        _suggestedVenues = venues;
+        _suggestedVenues = filteredVenues;
         if (_suggestedVenues.isEmpty) {
           _errorMessage =
               'No venues found for your criteria. Try adjusting filters or capacity.';
         }
-        _isLoading = false; // Set loading false here
-      });
-    } catch (e) {
-      // Keep error handling for potential issues in demo data or filtering
-      setState(() {
-        _suggestedVenues = []; // Clear venues on error
-        _errorMessage = 'Error filtering demo venues. Please try again.';
         _isLoading = false;
       });
-      debugPrint('Error processing demo venues: $e');
+    } catch (e) {
+      setState(() {
+        _suggestedVenues = [];
+        _errorMessage = 'Error fetching venues. Please try again.';
+        _isLoading = false;
+      });
+      debugPrint('Error fetching venues: $e');
     }
-    // Removed finally block as isLoading is set within try/catch
-  }
-
-  List<Venue> _getDemoVenues() {
-    return [
-      Venue(
-        id: '1',
-        name: 'The Elements',
-        location: 'South Jakarta',
-        rating: 5.0,
-        capacity: 250,
-        venueType: 'Wedding',
-        description:
-            'A luxurious venue perfect for weddings and grand celebrations.',
-        amenities: ['Parking', 'WiFi', 'Catering', 'Sound System'],
-        address: '123 Luxury Street',
-        city: 'Jakarta',
-        state: 'Jakarta',
-        country: 'Indonesia',
-        postalCode: '12345',
-        images: ['https://picsum.photos/id/237/400/300'],
-        isAvailable: true,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      Venue(
-        id: '2',
-        name: 'Grand Ballroom Central',
-        location: 'Central Jakarta',
-        rating: 4.8,
-        capacity: 800,
-        venueType: 'Corporate Event',
-        description: 'Ideal for large corporate events and conferences.',
-        amenities: ['Projector', 'Stage', 'Parking', 'WiFi'],
-        address: '456 Business Avenue',
-        city: 'Jakarta',
-        state: 'Jakarta',
-        country: 'Indonesia',
-        postalCode: '12346',
-        images: ['https://picsum.photos/id/238/400/300'],
-        isAvailable: true,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      Venue(
-        id: '3',
-        name: 'Cozy Cafe Corner',
-        location: 'West Jakarta',
-        rating: 4.5,
-        capacity: 50,
-        venueType: 'Birthday Party',
-        description: 'A small, intimate cafe for birthday parties.',
-        amenities: ['WiFi', 'Coffee', 'Snacks'],
-        address: '789 Cafe Street',
-        city: 'Jakarta',
-        state: 'Jakarta',
-        country: 'Indonesia',
-        postalCode: '12347',
-        images: ['https://picsum.photos/id/239/400/300'],
-        isAvailable: true,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      Venue(
-        id: '4',
-        name: 'Exhibition Hall Alpha',
-        location: 'North Jakarta',
-        rating: 4.7,
-        capacity: 1500,
-        venueType: 'Exhibition',
-        description: 'Spacious hall for major conferences and exhibitions.',
-        amenities: ['Large Screens', 'Booths', 'Parking', 'Food Court'],
-        address: '321 Exhibition Road',
-        city: 'Jakarta',
-        state: 'Jakarta',
-        country: 'Indonesia',
-        postalCode: '12348',
-        images: ['https://picsum.photos/id/240/400/300'],
-        isAvailable: true,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      Venue(
-        id: '5',
-        name: 'Riverside Garden',
-        location: 'East Jakarta',
-        rating: 4.9,
-        capacity: 120,
-        venueType: 'Social Gathering',
-        description: 'Beautiful outdoor garden space for social events.',
-        amenities: ['Garden', 'Outdoor Seating', 'BBQ Area'],
-        address: '654 Garden Lane',
-        city: 'Jakarta',
-        state: 'Jakarta',
-        country: 'Indonesia',
-        postalCode: '12349',
-        images: ['https://picsum.photos/id/241/400/300'],
-        isAvailable: true,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      Venue(
-        id: '6',
-        name: 'Multipurpose Hub One',
-        location: 'Central Jakarta',
-        rating: 4.6,
-        capacity: 300,
-        venueType: 'Multi-purpose',
-        description: 'Flexible space suitable for various event types.',
-        amenities: ['Parking', 'WiFi', 'AV Equipment', 'Kitchenette'],
-        address: '987 Hub Street',
-        city: 'Jakarta',
-        state: 'Jakarta',
-        country: 'Indonesia',
-        postalCode: '12350',
-        images: ['https://picsum.photos/id/242/400/300'],
-        isAvailable: true,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      Venue(
-        id: '7',
-        name: 'Arena Maxima',
-        location: 'South Jakarta',
-        rating: 4.9,
-        capacity: 4500,
-        venueType: 'Concert',
-        description: 'Large arena for concerts and major performances.',
-        amenities: ['Stage', 'Sound System', 'Parking', 'Seating'],
-        address: '147 Arena Boulevard',
-        city: 'Jakarta',
-        state: 'Jakarta',
-        country: 'Indonesia',
-        postalCode: '12351',
-        images: ['https://picsum.photos/id/243/400/300'],
-        isAvailable: true,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-    ];
   }
 
   void _onVenueSelected(Venue venue) {
@@ -260,13 +117,27 @@ class _EventVenueFinderScreenState extends State<EventVenueFinderScreen> {
             description: 'General Event',
             imageUrl: '');
 
+    // Validate capacity input
+    final enteredCapacity = int.tryParse(_capacityController.text);
+    if (enteredCapacity == null ||
+        enteredCapacity < 1 ||
+        enteredCapacity > 1000) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid capacity between 1 and 1000.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return; // Prevent navigation
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EventRegistrationScreen(
           eventType: eventTypeForRegistration,
           venue: venue,
-          expectedCapacity: int.tryParse(_capacityController.text) ?? 0,
+          expectedCapacity: enteredCapacity,
         ),
       ),
     );

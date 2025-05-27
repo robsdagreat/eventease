@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../models/special.dart';
 import '../theme/app_colors.dart';
 import '../widgets/cards/special_card.dart';
+import '../services/api_service.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
 
 class SpecialsScreen extends StatefulWidget {
   const SpecialsScreen({Key? key}) : super(key: key);
@@ -20,54 +23,45 @@ class _SpecialsScreenState extends State<SpecialsScreen> {
     'Other'
   ];
 
-  // Demo specials data
-  final List<Special> _specials = [
-    Special(
-      id: '1',
-      title: 'Beach Resort Weekend',
-      description: 'Enjoy a luxurious weekend at our beach resort',
-      venueId: '1',
-      venueName: 'The Elements',
-      imageUrl: 'https://picsum.photos/id/1010/400/300',
-      startDate: DateTime(2025, 6, 1),
-      endDate: DateTime(2025, 6, 30),
-      type: 'Weekend',
-      discountPercentage: 30.0,
-      isActive: true,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    ),
-    Special(
-      id: '2',
-      title: 'Spa Retreat Package',
-      description: 'Relax and rejuvenate with our special spa package',
-      venueId: '2',
-      venueName: 'Urban Loft',
-      imageUrl: 'https://picsum.photos/id/1011/400/300',
-      startDate: DateTime(2025, 5, 1),
-      endDate: DateTime(2025, 5, 31),
-      type: 'Spa',
-      discountPercentage: 25.0,
-      isActive: true,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    ),
-    Special(
-      id: '3',
-      title: 'City Tour Bundle',
-      description: 'Explore the city with our comprehensive tour package',
-      venueId: '3',
-      venueName: 'Country Mansion',
-      imageUrl: 'https://picsum.photos/id/1012/400/300',
-      startDate: DateTime(2025, 7, 1),
-      endDate: DateTime(2025, 7, 31),
-      type: 'Tour',
-      discountPercentage: 40.0,
-      isActive: true,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    ),
-  ];
+  List<Special> _specials = [];
+  bool _isLoading = true;
+  String? _error;
+
+  late ApiService _apiService;
+
+  @override
+  void initState() {
+    super.initState();
+    // _fetchSpecials(); // Call in didChangeDependencies
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final authService = Provider.of<AuthService>(context);
+    _apiService = ApiService(authService);
+    _fetchSpecials();
+  }
+
+  Future<void> _fetchSpecials() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final specials = await _apiService.getSpecials();
+      setState(() {
+        _specials = specials;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+      print('Error fetching specials: $e');
+    }
+  }
 
   List<Special> get _filteredSpecials {
     if (_selectedFilter == 'All') {
@@ -179,18 +173,58 @@ class _SpecialsScreenState extends State<SpecialsScreen> {
               ),
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final special = _filteredSpecials[index];
-                  return SpecialCard(special: special);
-                },
-                childCount: _filteredSpecials.length,
+          if (_isLoading)
+            const SliverFillRemaining(
+              child: Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.pink),
+                ),
+              ),
+            )
+          else if (_error != null)
+            SliverFillRemaining(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Error loading specials',
+                      style: TextStyle(color: AppColors.pink),
+                    ),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: _fetchSpecials,
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else if (_filteredSpecials.isEmpty)
+            const SliverFillRemaining(
+              child: Center(
+                child: Text(
+                  'No specials available',
+                  style: TextStyle(
+                    color: AppColors.white70,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final special = _filteredSpecials[index];
+                    return SpecialCard(special: special);
+                  },
+                  childCount: _filteredSpecials.length,
+                ),
               ),
             ),
-          ),
         ],
       ),
     );

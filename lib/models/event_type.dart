@@ -21,6 +21,8 @@ class EventType {
       name: json['name'],
       description: json['description'],
       imageUrl: json['image_url'],
+      minCapacity: json['min_capacity'] ?? 1,
+      maxCapacity: json['max_capacity'] ?? 1000,
     );
   }
 
@@ -30,6 +32,8 @@ class EventType {
       'name': name,
       'description': description,
       'image_url': imageUrl,
+      'min_capacity': minCapacity,
+      'max_capacity': maxCapacity,
     };
   }
 

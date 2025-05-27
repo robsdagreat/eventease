@@ -3,6 +3,10 @@ import '../models/event.dart';
 import '../widgets/cards/event_card.dart';
 import 'event_venue_finder_screen.dart';
 import '../theme/app_colors.dart'; // Import AppColors
+import '../services/event_service.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
+import '../services/api_service.dart';
 
 class UpcomingEventsScreen extends StatefulWidget {
   const UpcomingEventsScreen({Key? key}) : super(key: key);
@@ -26,71 +30,22 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
   bool _isLoading = true;
   String? _errorMessage;
 
+  late ApiService _apiService;
+  late EventService _eventService;
+
   @override
   void initState() {
     super.initState();
-    _fetchEvents();
+    // _fetchEvents(); // Call in didChangeDependencies
   }
 
-  List<Event> _getDemoEvents() {
-    return [
-      Event(
-        id: '1',
-        name: 'Summer Festival',
-        description:
-            'A fun-filled summer festival with music, food, and activities',
-        imageUrl: 'https://picsum.photos/id/1000/400/300',
-        startTime: DateTime(2025, 6, 15),
-        endTime: DateTime(2025, 6, 16),
-        eventType: 'Festival',
-        venueId: '1',
-        venueName: 'The Elements',
-        userId: '1',
-        organizerName: 'Event Organizers Inc',
-        isPublic: true,
-        expectedAttendees: 1000,
-        status: 'published',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      Event(
-        id: '2',
-        name: 'Tech Conference',
-        description: 'Annual technology conference featuring industry leaders',
-        imageUrl: 'https://picsum.photos/id/1001/400/300',
-        startTime: DateTime(2025, 5, 22),
-        endTime: DateTime(2025, 5, 23),
-        eventType: 'Corporate',
-        venueId: '2',
-        venueName: 'Urban Loft',
-        userId: '1',
-        organizerName: 'Tech Events Co',
-        isPublic: true,
-        expectedAttendees: 500,
-        status: 'published',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      Event(
-        id: '3',
-        name: 'Food & Wine Expo',
-        description:
-            'Experience the finest food and wine from around the world',
-        imageUrl: 'https://picsum.photos/id/1002/400/300',
-        startTime: DateTime(2025, 7, 3),
-        endTime: DateTime(2025, 7, 4),
-        eventType: 'Exhibition',
-        venueId: '3',
-        venueName: 'Country Mansion',
-        userId: '1',
-        organizerName: 'Gourmet Events',
-        isPublic: true,
-        expectedAttendees: 300,
-        status: 'published',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-    ];
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final authService = Provider.of<AuthService>(context);
+    _apiService = ApiService(authService);
+    _eventService = EventService(_apiService);
+    _fetchEvents();
   }
 
   Future<void> _fetchEvents() async {
@@ -98,30 +53,21 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
       _isLoading = true;
       _errorMessage = null;
     });
-
     try {
-      final fetchedEvents = _getDemoEvents();
-
-      // Filter for upcoming dates
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      final upcomingDemoEvents = fetchedEvents
-          .where((event) => !event.startTime.isBefore(today))
-          .toList();
-      // Sort demo events by start time
-      upcomingDemoEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
-
+      final events = await _eventService.getAllEvents();
+      // Sort events by start time (soonest first)
+      events.sort((a, b) => a.startTime.compareTo(b.startTime));
       setState(() {
-        _events = upcomingDemoEvents;
+        _events = events;
         _isLoading = false;
       });
     } catch (e) {
       setState(() {
         _events = [];
-        _errorMessage = 'Error processing demo events. Please try again.';
+        _errorMessage = 'Error fetching events. Please try again.';
         _isLoading = false;
       });
-      debugPrint('Error processing demo events: $e');
+      debugPrint('Error fetching events: $e');
     }
   }
 

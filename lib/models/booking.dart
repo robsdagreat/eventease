@@ -4,7 +4,8 @@ class Booking {
   final String id;
   final String venueId;
   final String userId;
-  final DateTime date;
+  final DateTime startTime;
+  final DateTime endTime;
   final String time;
   final int numberOfGuests;
   final DateTime createdAt;
@@ -13,7 +14,8 @@ class Booking {
     required this.id,
     required this.venueId,
     required this.userId,
-    required this.date,
+    required this.startTime,
+    required this.endTime,
     required this.time,
     required this.numberOfGuests,
     required this.createdAt,
@@ -24,7 +26,8 @@ class Booking {
     return {
       'venueId': venueId,
       'userId': userId,
-      'date': Timestamp.fromDate(date), // Store DateTime as Firebase Timestamp
+      'startTime': Timestamp.fromDate(startTime),
+      'endTime': Timestamp.fromDate(endTime),
       'time': time,
       'numberOfGuests': numberOfGuests,
       'createdAt': Timestamp.fromDate(createdAt),
@@ -38,7 +41,8 @@ class Booking {
       id: doc.id,
       venueId: data['venueId'] ?? '',
       userId: data['userId'] ?? '',
-      date: (data['date'] as Timestamp).toDate(),
+      startTime: (data['startTime'] as Timestamp).toDate(),
+      endTime: (data['endTime'] as Timestamp).toDate(),
       time: data['time'] ?? '',
       numberOfGuests: data['numberOfGuests'] ?? 0,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
