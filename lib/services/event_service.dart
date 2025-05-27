@@ -1,9 +1,13 @@
 import 'package:flutter/foundation.dart';
 import '../models/event.dart';
 import 'api_service.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'notification_db_service.dart';
 
 class EventService {
   final ApiService _apiService;
+  final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
 
   EventService(this._apiService);
 
@@ -94,7 +98,32 @@ class EventService {
 
   Future<Event> createEvent(Event event) async {
     try {
-      return await _apiService.createEvent(event);
+      final createdEvent = await _apiService.createEvent(event);
+
+      // Show local notification
+      await _localNotifications.show(
+        0,
+        'Event Created Successfully!',
+        'Your event "${event.name}" has been created.',
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'event_channel',
+            'Event Notifications',
+            channelDescription: 'Notifications for event creation',
+            importance: Importance.max,
+            priority: Priority.high,
+            icon: 'ic_stat_notify',
+          ),
+        ),
+      );
+
+      // Save notification to SQLite
+      await NotificationDBService().insertNotification(
+        'Event Created Successfully!',
+        'Your event "${event.name}" has been created.',
+      );
+
+      return createdEvent;
     } catch (e) {
       debugPrint('Error creating event: $e');
       rethrow;

@@ -20,6 +20,9 @@ import '../widgets/lists/special_list.dart';
 import '../theme/app_colors.dart';
 import 'event_venue_finder_screen.dart';
 import '../services/api_service.dart';
+import 'notifications.dart';
+import 'package:flutter/widgets.dart';
+import '../../main.dart'; // Import where routeObserver is defined
 
 class LandingPage extends StatefulWidget {
   const LandingPage({Key? key}) : super(key: key);
@@ -29,7 +32,7 @@ class LandingPage extends StatefulWidget {
 }
 
 class _LandingPageState extends State<LandingPage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, RouteAware {
   // Remove all dummy data lists
   // Add state variables for backend data
   List<Venue> _venues = [];
@@ -74,6 +77,22 @@ class _LandingPageState extends State<LandingPage>
     super.didChangeDependencies();
     final authService = Provider.of<AuthService>(context);
     _apiService = ApiService(authService);
+    _fetchAllData();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // Called when coming back to this screen
     _fetchAllData();
   }
 
@@ -217,7 +236,15 @@ class _LandingPageState extends State<LandingPage>
                                         icon: const Icon(
                                             Icons.notifications_none,
                                             color: AppColors.white),
-                                        onPressed: () {},
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  NotificationHistoryScreen(),
+                                            ),
+                                          );
+                                        },
                                       ),
                                       IconButton(
                                         icon: const Icon(Icons.account_circle,
@@ -374,7 +401,14 @@ class _LandingPageState extends State<LandingPage>
                                                 builder: (context) =>
                                                     const EventVenueFinderScreen(),
                                               ),
-                                            );
+                                            ).then((createdEvent) {
+                                              if (createdEvent != null) {
+                                                setState(() {
+                                                  _events.insert(
+                                                      0, createdEvent);
+                                                });
+                                              }
+                                            });
                                           } else {
                                             _navigateToAuth(context);
                                           }

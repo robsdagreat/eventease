@@ -1,10 +1,9 @@
-import 'package:flutter/foundation.dart';
 import '../models/venue.dart';
-import 'api_service.dart';
+import '../services/api_service.dart';
+import 'package:flutter/foundation.dart';
 
 class VenueService {
   final ApiService _apiService;
-
   VenueService(this._apiService);
 
   Future<Venue?> getVenueById(String venueId) async {
@@ -25,66 +24,5 @@ class VenueService {
     }
   }
 
-  Future<List<Venue>> getAvailableVenues() async {
-    try {
-      return await _apiService.getAvailableVenues();
-    } catch (e) {
-      debugPrint('Error fetching available venues: $e');
-      return [];
-    }
-  }
-
-  Future<List<Venue>> searchVenues({
-    String? name,
-    String? venueType,
-    String? location,
-    int? minCapacity,
-    int? maxCapacity,
-    double? minRating,
-    List<String>? amenities,
-    bool? isAvailable,
-  }) async {
-    try {
-      return await _apiService.searchVenues(
-        name: name,
-        venueType: venueType,
-        location: location,
-        minCapacity: minCapacity,
-        maxCapacity: maxCapacity,
-        minRating: minRating,
-        amenities: amenities,
-        isAvailable: isAvailable,
-      );
-    } catch (e) {
-      debugPrint('Error searching venues: $e');
-      return [];
-    }
-  }
-
-  Future<Venue> createVenue(Venue venue) async {
-    try {
-      return await _apiService.createVenue(venue);
-    } catch (e) {
-      debugPrint('Error creating venue: $e');
-      rethrow;
-    }
-  }
-
-  Future<Venue> updateVenue(String id, Venue venue) async {
-    try {
-      return await _apiService.updateVenue(id, venue);
-    } catch (e) {
-      debugPrint('Error updating venue: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> deleteVenue(String id) async {
-    try {
-      await _apiService.deleteVenue(id);
-    } catch (e) {
-      debugPrint('Error deleting venue: $e');
-      rethrow;
-    }
-  }
+  // You can re-implement other methods for Firestore if needed
 }

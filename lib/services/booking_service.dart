@@ -2,18 +2,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/booking.dart'; // Assuming a Booking model exists or will be created
 import 'package:flutter/material.dart'; // Import material for ChangeNotifier
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'notification_db_service.dart'; // import your SQLite service
 
 class BookingService extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
   Future<void> createBooking(Booking booking) async {
-    if (_auth.currentUser == null) {
-      throw Exception('User not logged in');
-    }
-    // Assign the current user's ID to the booking
+    final user = _auth.currentUser;
+    if (user == null) throw Exception('User not logged in');
+
     final bookingData = booking.toJson();
-    bookingData['userId'] = _auth.currentUser!.uid;
+    bookingData['userId'] = user.uid;
 
     // --- Overlap Check ---
     // Fetch bookings for the same venue that fall within the date range of the new booking
@@ -28,6 +31,7 @@ class BookingService extends ChangeNotifier {
         booking.startTime.year, booking.startTime.month, booking.startTime.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
 
+    print('Booking data to Firestore: $bookingData');
     final existingBookingsQuery = await _firestore
         .collection('bookings')
         .where('venueId', isEqualTo: booking.venueId)
@@ -54,22 +58,69 @@ class BookingService extends ChangeNotifier {
     }
     // --- End Overlap Check ---
 
+    print('Booking data to Firestore: $bookingData');
     await _firestore.collection('bookings').add(bookingData);
+
+    // Prepare notification details
+    String title = 'Booking Confirmed!';
+    String body =
+        'Your booking for venue ${booking.venueId} at ${booking.time} is confirmed.';
+
+    // Show local notification
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      title,
+      body,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'booking_channel',
+          'Booking Notifications',
+          channelDescription: 'Notifications for venue bookings',
+          importance: Importance.max,
+          priority: Priority.high,
+          icon: 'ic_stat_notify',
+        ),
+      ),
+    );
+
+    // Save notification to SQLite
+    await NotificationDBService().insertNotification(title, body);
   }
 
   // Method to fetch all bookings for the currently logged-in user
   Stream<List<Booking>> getUserBookings() {
     if (_auth.currentUser == null) {
-      // Return an empty stream if user is not logged in
+      debugPrint('getUserBookings: User not logged in');
       return Stream.value([]);
     }
-    return _firestore
-        .collection('bookings')
-        .where('userId', isEqualTo: _auth.currentUser!.uid)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => Booking.fromDocument(doc)).toList());
+
+    debugPrint(
+        'getUserBookings: Fetching bookings for user ${_auth.currentUser!.uid}');
+
+    try {
+      return _firestore
+          .collection('bookings')
+          .where('userId', isEqualTo: _auth.currentUser!.uid)
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .map((snapshot) {
+        debugPrint('getUserBookings: Got ${snapshot.docs.length} bookings');
+        return snapshot.docs.map((doc) {
+          try {
+            return Booking.fromDocument(doc);
+          } catch (e) {
+            debugPrint('Error parsing booking document ${doc.id}: $e');
+            rethrow;
+          }
+        }).toList();
+      }).handleError((error) {
+        debugPrint('Error in getUserBookings stream: $error');
+        throw error;
+      });
+    } catch (e) {
+      debugPrint('Error setting up getUserBookings stream: $e');
+      rethrow;
+    }
   }
 
   // Method to update an existing booking

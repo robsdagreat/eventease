@@ -7,6 +7,8 @@ import '../services/event_service.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
+import 'package:flutter/widgets.dart';
+import '../../main.dart'; // Import where routeObserver is defined
 
 class UpcomingEventsScreen extends StatefulWidget {
   const UpcomingEventsScreen({Key? key}) : super(key: key);
@@ -15,7 +17,8 @@ class UpcomingEventsScreen extends StatefulWidget {
   State<UpcomingEventsScreen> createState() => _UpcomingEventsScreenState();
 }
 
-class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
+class _UpcomingEventsScreenState extends State<UpcomingEventsScreen>
+    with RouteAware {
   final List<String> _filterOptions = [
     'All',
     'Wedding',
@@ -45,6 +48,22 @@ class _UpcomingEventsScreenState extends State<UpcomingEventsScreen> {
     final authService = Provider.of<AuthService>(context);
     _apiService = ApiService(authService);
     _eventService = EventService(_apiService);
+    _fetchEvents();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // Called when coming back to this screen
     _fetchEvents();
   }
 

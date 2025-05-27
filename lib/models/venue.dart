@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Venue {
   final String id;
   final String name;
@@ -152,6 +154,37 @@ class Venue {
       isAvailable: isAvailable ?? this.isAvailable,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  // Factory constructor to create Venue from Firestore document
+  factory Venue.fromDocument(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return Venue(
+      id: doc.id,
+      name: data['name'] ?? '',
+      description: data['description'] ?? '',
+      location: data['location'] ?? '',
+      address: data['address'] ?? '',
+      city: data['city'] ?? '',
+      state: data['state'] ?? '',
+      country: data['country'] ?? '',
+      postalCode: data['postal_code'] ?? '',
+      venueType: data['venue_type'] ?? '',
+      capacity: data['capacity'] ?? 0,
+      rating: data['rating']?.toDouble() ?? 0.0,
+      amenities: List<String>.from(data['amenities'] ?? []),
+      images: List<String>.from(data['images'] ?? []),
+      contactEmail: data['contact_email'],
+      contactPhone: data['contact_phone'],
+      website: data['website'],
+      pricing: data['pricing'],
+      specialOffers: data['special_offers'] == null
+          ? null
+          : List<String>.from(data['special_offers']),
+      isAvailable: data['is_available'] ?? true,
+      createdAt: DateTime.parse(data['created_at']),
+      updatedAt: DateTime.parse(data['updated_at']),
     );
   }
 }
