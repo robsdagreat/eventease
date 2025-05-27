@@ -178,13 +178,12 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
       return;
     }
 
-    // Validate that an image is selected or a URL is provided
-    if (_imageFile == null &&
-        (_enteredImageUrl == null || _enteredImageUrl!.isEmpty)) {
+    // Validate that an image URL is provided
+    if (_enteredImageUrl == null || _enteredImageUrl!.isEmpty) {
       setState(() {
-        _errorMessage = 'Please select an event image or enter an image URL';
+        _errorMessage = 'Please enter an image URL for the event';
       });
-      print('Validation failed: no image selected or URL entered');
+      print('Validation failed: no image URL entered');
       return;
     }
 
@@ -247,87 +246,54 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
         return;
       }
 
-      String? imageUrl;
-      if (_imageFile != null) {
-        // Upload image if a new one was selected
-        print('Uploading image to Firebase...');
-        imageUrl = await _uploadImage();
-        print('Image upload complete. URL: $imageUrl');
-        if (imageUrl == null) {
-          throw Exception('Failed to get image URL');
-        }
-      } else if (_enteredImageUrl != null && _enteredImageUrl!.isNotEmpty) {
-        imageUrl = _enteredImageUrl;
-        print('Using entered image URL: $imageUrl');
-      }
-
       final event = Event(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: _nameController.text.trim(),
-        description: _descriptionController.text.trim(),
-        startTime: DateTime(
-          _selectedDate!.year,
-          _selectedDate!.month,
-          _selectedDate!.day,
-          12,
-          0,
-        ),
-        endTime: DateTime(
-          _selectedDate!.year,
-          _selectedDate!.month,
-          _selectedDate!.day,
-          15,
-          0,
-        ),
+        id: '', // Will be set by the backend
+        name: _nameController.text,
+        description: _descriptionController.text,
         eventType: widget.eventType.name,
         venueId: widget.venue.id,
         venueName: widget.venue.name,
+        startTime: _selectedDate!,
+        endTime: _selectedDate!
+            .add(const Duration(hours: 3)), // Default 3-hour duration
+        status: 'upcoming',
+        imageUrl: _enteredImageUrl,
         firebase_user_id: currentUser.id,
         organizerName: _hostType == 'professional'
-            ? _hostNameController.text.trim()
+            ? _hostNameController.text
             : 'Private Host',
         isPublic: _isPublic,
         expectedAttendees: widget.expectedCapacity,
-        imageUrl: imageUrl,
-        status: 'upcoming',
+        ticketPrice: ticketPrice,
+        contactEmail:
+            _hostType == 'professional' ? _hostContactController.text : null,
+        contactPhone:
+            _hostType == 'personal' ? _hostContactController.text : null,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        ticketPrice: ticketPrice,
-        tags: [], // Assuming tags are not required for now
-        contactEmail: _hostType == 'professional'
-            ? _hostContactController.text.trim()
-            : null,
-        contactPhone: _hostType == 'personal'
-            ? _hostContactController.text.trim()
-            : null, // Assuming personal contact is phone
+        tags: [], // Optional tags
       );
 
-      // Call the API service to create the event with a timeout
-      print('Sending event to backend...');
-      await _apiService.createEvent(event).timeout(const Duration(seconds: 30));
-      print('Event created successfully!');
+      print('Creating event with data: ${event.toJson()}');
+      final createdEvent = await _apiService
+          .createEvent(event)
+          .timeout(const Duration(seconds: 30));
 
       if (mounted) {
-        // Navigate back on success
-        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Event registered successfully!'),
             backgroundColor: Colors.green,
           ),
         );
+        Navigator.pop(context, createdEvent);
       }
     } catch (e) {
+      print('Error creating event: $e');
       setState(() {
-        _errorMessage = 'Error registering event. Please try again.';
+        _errorMessage = 'Failed to register event. Please try again.';
+        _isLoading = false;
       });
-      print('Error registering event: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 

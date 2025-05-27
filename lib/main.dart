@@ -19,6 +19,10 @@ import 'services/api_service.dart';
 import 'services/event_service.dart';
 import 'services/venue_service.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'services/notification_service.dart';
+import 'package:flutter/widgets.dart';
+
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +32,7 @@ void main() async {
   await FirebaseAppCheck.instance.activate(
     androidProvider: AndroidProvider.debug,
   );
+  await setupLocalNotifications();
   runApp(const MyApp());
 }
 
@@ -60,6 +65,7 @@ class MyApp extends StatelessWidget {
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
         home: const MainNavigation(),
+        navigatorObservers: [routeObserver],
       ),
     );
   }

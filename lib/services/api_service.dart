@@ -11,7 +11,7 @@ class ApiService {
   // For Android Emulator
   static const String _androidEmulatorUrl = 'http://10.0.2.2:8000';
   // For physical device - replace with your computer's IP address
-  static const String _physicalDeviceUrl = 'http://192.168.247.214:8000';
+  static const String _physicalDeviceUrl = 'http://192.168.145.214:8000/api';
 
   // Use this to switch between emulator and physical device
   static const String baseUrl = _physicalDeviceUrl;
@@ -158,7 +158,7 @@ class ApiService {
   Future<Venue> getVenue(String id) async {
     try {
       final response = await _client.get(
-        Uri.parse('$baseUrl/api/venues/$id'),
+        Uri.parse('$baseUrl/venues/$id'),
         headers: await _getHeaders(),
       );
       final data = _handleResponse(response);
@@ -177,7 +177,7 @@ class ApiService {
   Future<Venue> createVenue(Venue venue) async {
     try {
       final response = await _client.post(
-        Uri.parse('$baseUrl/api/venues'),
+        Uri.parse('$baseUrl/venues'),
         headers: await _getHeaders(),
         body: json.encode(venue.toJson()),
       );
@@ -197,7 +197,7 @@ class ApiService {
   Future<Venue> updateVenue(String id, Venue venue) async {
     try {
       final response = await _client.put(
-        Uri.parse('$baseUrl/api/venues/$id'),
+        Uri.parse('$baseUrl/venues/$id'),
         headers: await _getHeaders(),
         body: json.encode(venue.toJson()),
       );
@@ -217,7 +217,7 @@ class ApiService {
   Future<void> deleteVenue(String id) async {
     try {
       final response = await _client.delete(
-        Uri.parse('$baseUrl/api/venues/$id'),
+        Uri.parse('$baseUrl/venues/$id'),
         headers: await _getHeaders(),
       );
       _handleResponse(response);
@@ -250,7 +250,7 @@ class ApiService {
       };
 
       final response = await _client.get(
-        Uri.parse('$baseUrl/api/venues/search')
+        Uri.parse('$baseUrl/venues/search')
             .replace(queryParameters: queryParams),
         headers: await _getHeaders(),
       );
@@ -265,7 +265,7 @@ class ApiService {
   Future<List<Venue>> getAvailableVenues() async {
     try {
       final response = await _client.get(
-        Uri.parse('$baseUrl/api/venues/available'),
+        Uri.parse('$baseUrl/venues/available'),
         headers: await _getHeaders(),
       );
       final data = _handleResponse(response);
@@ -290,7 +290,7 @@ class ApiService {
   Future<Event> getEvent(String id) async {
     try {
       final response = await _client.get(
-        Uri.parse('$baseUrl/api/events/$id'),
+        Uri.parse('$baseUrl/events/$id'),
         headers: await _getHeaders(),
       );
       final data = _handleResponse(response);
@@ -309,7 +309,7 @@ class ApiService {
   Future<Event> createEvent(Event event) async {
     try {
       final response = await _client.post(
-        Uri.parse('$baseUrl/api/events'),
+        Uri.parse('$baseUrl/events'),
         headers: await _getHeaders(),
         body: json.encode(event.toJson()),
       );
@@ -329,7 +329,7 @@ class ApiService {
   Future<Event> updateEvent(String id, Event event) async {
     try {
       final response = await _client.put(
-        Uri.parse('$baseUrl/api/events/$id'),
+        Uri.parse('$baseUrl/events/$id'),
         headers: await _getHeaders(),
         body: json.encode(event.toJson()),
       );
@@ -349,7 +349,7 @@ class ApiService {
   Future<void> deleteEvent(String id) async {
     try {
       final response = await _client.delete(
-        Uri.parse('$baseUrl/api/events/$id'),
+        Uri.parse('$baseUrl/events/$id'),
         headers: await _getHeaders(),
       );
       _handleResponse(response);
@@ -362,7 +362,7 @@ class ApiService {
   Future<List<Event>> getEventsByVenue(String venueId) async {
     try {
       final response = await _client.get(
-        Uri.parse('$baseUrl/api/events/venue/$venueId'),
+        Uri.parse('$baseUrl/events/venue/$venueId'),
         headers: await _getHeaders(),
       );
       final data = _handleResponse(response);
@@ -376,7 +376,7 @@ class ApiService {
   Future<List<Event>> getEventsByType(String type) async {
     try {
       final response = await _client.get(
-        Uri.parse('$baseUrl/api/events/type/$type'),
+        Uri.parse('$baseUrl/events/type/$type'),
         headers: await _getHeaders(),
       );
       final data = _handleResponse(response);
@@ -390,7 +390,7 @@ class ApiService {
   Future<List<Event>> getEventsByStatus(String status) async {
     try {
       final response = await _client.get(
-        Uri.parse('$baseUrl/api/events/status/$status'),
+        Uri.parse('$baseUrl/events/status/$status'),
         headers: await _getHeaders(),
       );
       final data = _handleResponse(response);
@@ -404,7 +404,7 @@ class ApiService {
   Future<List<Event>> getUpcomingEvents() async {
     try {
       final response = await _client.get(
-        Uri.parse('$baseUrl/api/events/upcoming'),
+        Uri.parse('$baseUrl/events/upcoming'),
         headers: await _getHeaders(),
       );
       final data = _handleResponse(response);
@@ -442,7 +442,7 @@ class ApiService {
       };
 
       final response = await _client.get(
-        Uri.parse('$baseUrl/api/events/search')
+        Uri.parse('$baseUrl/events/search')
             .replace(queryParameters: queryParams),
         headers: await _getHeaders(),
       );
@@ -455,13 +455,17 @@ class ApiService {
   }
 
   Future<List<Event>> getEventsByUser(String userId) async {
-    return _makeRequest<List<Event>>(
-      endpoint: '/events/user/$userId',
-      parseResponse: (response) async {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.map((json) => Event.fromJson(json)).toList();
-      },
-    );
+    try {
+      final response = await _client.get(
+        Uri.parse('$baseUrl/events/user/$userId'),
+        headers: await _getHeaders(),
+      );
+      final data = _handleResponse(response);
+      return _safeListCast(data, (json) => Event.fromJson(json));
+    } catch (e) {
+      print('Error fetching events by user $userId: $e');
+      rethrow;
+    }
   }
 
   // Special endpoints
@@ -478,7 +482,7 @@ class ApiService {
   Future<Special> getSpecial(String id) async {
     try {
       final response = await _client.get(
-        Uri.parse('$baseUrl/api/specials/$id'),
+        Uri.parse('$baseUrl/specials/$id'),
         headers: await _getHeaders(),
       );
       final data = _handleResponse(response);

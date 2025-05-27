@@ -117,30 +117,21 @@ class _EventVenueFinderScreenState extends State<EventVenueFinderScreen> {
             description: 'General Event',
             imageUrl: '');
 
-    // Validate capacity input
-    final enteredCapacity = int.tryParse(_capacityController.text);
-    if (enteredCapacity == null ||
-        enteredCapacity < 1 ||
-        enteredCapacity > 1000) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid capacity between 1 and 1000.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return; // Prevent navigation
-    }
-
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EventRegistrationScreen(
           eventType: eventTypeForRegistration,
           venue: venue,
-          expectedCapacity: enteredCapacity,
+          expectedCapacity: int.tryParse(_capacityController.text) ?? 0,
         ),
       ),
-    );
+    ).then((createdEvent) {
+      if (createdEvent != null) {
+        // Pop back to the landing page and refresh
+        Navigator.pop(context, createdEvent);
+      }
+    });
   }
 
   @override

@@ -99,3 +99,14 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Handle background messages here
   print('Handling background message: ${message.messageId}');
 }
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
+Future<void> setupLocalNotifications() async {
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+  final InitializationSettings initializationSettings =
+      InitializationSettings(android: initializationSettingsAndroid);
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+}
